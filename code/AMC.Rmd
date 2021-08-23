@@ -1,0 +1,265 @@
+---
+title: "Antimicrobial consumption"
+author: "Oeng Sopheap"
+date: "8/18/2021"
+output: html_document
+---
+
+<style>
+.table-hover > tbody > tr:hover { 
+  background-color: #f4f442;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.align = 'c')
+```
+
+## 1. Objectives
+The purpose of performing antimicrobial consumption monitoring is to evaluate the trends in antimicrobial use and monitor the progress of antimicrobial stewardship (AMS) program initiative.
+## 2. Background
+Antimicrobial usage is the main driver for promoting antibiotic resistance which is considered one of the major health challenges in human and veterinary medicine. To be insightful and able to take action on time, data of antimicrobial consumption should be collected, analysed and communicated regularly. In addition, methods for data analysis should be simple, reproducible and timely. Luckily, R Markdown embed with R programming language are able to generate reports effectively with required minimum computer skill.  
+
+To generate reports, raw data was extracted from hospital inventory system "HosDID" into excel and then imported to R programming for cleaning, analysis and generating reports in an HTML file. The HTML file can be shared with relevant stakeholders for quality improvement. 
+
+## 3. Antimicrobial consumption
+
+```{r library}
+library(tidyverse)
+library(rio)
+library(janitor)
+library(kableExtra)
+library(AMR)
+```
+
+```{r import dic}
+# Import dic
+dic <- import("dic/dictionary.xlsx", sheet = "Dict")
+patient_day <- import("dic/dictionary.xlsx", sheet = "Patient_day") %>% 
+	filter(row_number() <= n() - 1) %>% clean_names()
+```
+
+```{r import data}
+# import data function
+read_file <- function(data, sheet, m){
+	import(data, skip = 7, sheet = sheet) %>% 
+		clean_names() %>% 
+		remove_empty() %>% 
+		filter(row_number() <= n() - 2) %>% 
+		select(commodity_name, line_total, form, strength) %>% 
+		mutate(month = rep(m, length(commodity_name))) 
+}
+
+# Import data
+# Jan----
+Jan <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
+					sheet = "Jan",
+					m = "Jan")
+# Feb----
+Feb <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
+								 sheet = "Feb",
+								 m = "Feb")
+# Mar----
+Mar <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
+								 sheet = "March",
+								 m = "Mar")
+# Apr----
+Apr <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
+								 sheet = "April",
+								 m = "Apr")
+# May----
+May <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
+								 sheet = "May",
+								 m = "May")
+# June-----
+Jun <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
+								 sheet = "June",
+								 m = "Jun")
+# July----
+Jul <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
+					sheet = "July",
+					m = "Jul")
+# Aug----
+Aug <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
+					sheet = "Auguast",
+					m = "Aug")
+# Sep----
+Sep <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
+								 sheet = "September",
+								 m = "Sep")
+# Oct----
+Oct <- read_file(data = "data/octoberrptmonthlyconsumption.xls", 
+								 sheet = "Sheet1",
+								 m = "Oct")
+# Nov----
+Nov <- read_file(data = "data/Nov.xlsx", 
+								 sheet = "Sheet1",
+								 m = "Nov")
+# Dec----
+
+Dec <- read_file(data = "data/decemberrptmonthlyconsumption.xls", 
+								 sheet = "Sheet1",
+								 m = "Dec")
+
+```
+
+```{r bind and cleaning}
+# Binding row-----
+data <- bind_rows(Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec) %>% 
+	distinct(commodity_name, form, strength, month, .keep_all = TRUE) %>%
+	filter(commodity_name %in% dic$commodity_name) 
+
+data <- left_join(data,dic) %>% left_join(patient_day) %>% 
+	mutate(ddd_1000 = round(as.numeric(line_total) * as.numeric(gram) * 1000 / (as.numeric(ddd) * patient_day), 2),
+				 Antibiotic = ab_name(Abbr),
+				 Antibiotic = paste0(Antibiotic, " (", route,")"),
+				 month = factor(month, levels = month.abb))
+
+# data %>% 
+# 	group_by(monitoring) %>% 
+# 	summarise(sum(ddd_1000)) %>% view()
+
+# data %>% 
+# 	pivot_wider(names_from = month, values_from = ddd_1000) %>% 
+# 	arrange(commodity_name) %>%
+# 	adorn_totals("col") %>% view()
+# 	mutate(Total_gram = as.numeric(gram) * Total,
+# 				 Gram_ddd = as.numeric(ddd) * Total_gram,
+# 				 ddd_1000 = Total_gram * 1000/sum(patient_day$Patient_day),
+# 				 Antibiotic = ab_name(Abbr))
+	
+```
+### 3.1 Monthly antimicrobial dispensing
+Data from Siem Reap in 2019   
+
+```{r dispensing}
+data %>% 
+	select(Antibiotic, form, strength, month, line_total) %>% 
+	pivot_wider(names_from = month, values_from = line_total) %>% 
+	arrange(Antibiotic) %>% 
+	mutate_all(~replace(., is.na(.), 0)) %>% 
+	adorn_totals("col") %>% 
+	kable(align = c('l','l','l','c','c','c','c','c','c','c','c','c','c','c','c','r'), format.args = list(big.mark = ",")) %>% kable_styling(bootstrap_options = c("bordered","condensed", "striped", "hover","responsive")) %>% 
+	collapse_rows(columns = 1, valign = "middle") %>% 
+  scroll_box(width = "110%", height = "800px")
+		
+```
+
+<br>
+To calculate antimicrobial consumption, we convert antimicrobial dispensing to defined daily doses. We have `r format(round_half_up(sum(data$ddd_1000)), big.mark=",")` DDDs/1000 patient days.
+
+### 3.2 Monthly Antimicrobial consumption
+
+```{r monthly consumption}
+data %>% 
+	filter(!is.na(monitoring)) %>% 
+	group_by(monitoring, month) %>% 
+	summarise(n = sum(ddd_1000)) %>% 
+	group_by(month) %>% 
+	mutate(pro = round_half_up(n/sum(n)*100)) %>% 
+	ggplot(aes(month, pro, fill = monitoring)) +
+	geom_bar(stat = "identity") +
+	geom_text(aes(label = pro), position = position_stack(vjust = 0.5)) +
+	labs(x = "Month", y = "Proportion (%)", title = "WHO AWaRe classification") +
+	theme_bw() +
+	theme(plot.title = element_text(color = "black", face = "bold", hjust = 0.5),
+				legend.title = element_blank()) +
+	scale_fill_manual(values = c("#88cc00","#ffcc00"))
+
+```
+
+### 3.2 Define Daily Dose  
+```{r ddd}
+data %>% 
+	group_by(Antibiotic) %>% 
+	summarise(ddd_1000 = round(mean(ddd_1000),1)) %>% 
+	ggplot(aes(reorder(Antibiotic, ddd_1000), ddd_1000, fill = Antibiotic)) + 
+	geom_bar(stat = "identity") + 
+	geom_text(aes(label = format(ddd_1000, big.mark = ",")), hjust = -0.2, size = 3) +
+	coord_flip() +
+	scale_y_continuous(expand = expansion(mult = c(0, .2))) +
+	labs(x = "Antimicrobial",
+			 y = "DDDs/1000 patient days", 
+			 title = "Defined Daily Doses") +
+	theme_classic() +
+	theme(legend.position = "non",
+				plot.title = element_text(hjust = 0.5, colour = "black", face = "bold" ),
+				axis.text = element_text(colour = "black", size = 9))
+
+```
+
+### 3.3 Antimicrobial in AWaRe Group  
+
+```{r AB AWaRe}
+
+da <- data %>% 
+	filter(!is.na(monitoring)) %>% 
+	group_by(monitoring) %>% 
+	summarise(n = sum(ddd_1000)) %>% 
+	ungroup() %>% 
+	mutate(pct = round_half_up(n/sum(n)*100)) 
+
+da %>% 
+	ggplot(aes(x = '', y = pct, fill = monitoring)) + 
+	geom_bar(stat = "identity") +
+	geom_label(aes(label = paste0(monitoring, "\n", pct, "%")),
+						position = position_stack(vjust = 0.5)) + 
+	coord_polar("y", start = 0, direction = -1) +
+ labs(title = "Antimicrobial in WHO AWaRe Groups", 
+			 subtitle = paste0("(n= ", format(round_half_up(sum(da$n)), big.mark = ","),")")) + 
+	theme_void() +
+	theme(legend.position = "non",
+				plot.title = element_text(hjust = 0.5,
+																	colour = "black", 
+																	face = "bold"),
+				plot.subtitle = element_text(hjust = 0.5)) +
+	scale_fill_manual(values = c("#88cc00","#ffcc00")) # "#88cc00" green, "#ffcc00" yellow
+#rm(da)
+
+```
+
+```{r AB in access group}
+data %>% 
+	select(Antibiotic, monitoring, ddd_1000) %>% 
+	filter(monitoring == "Access") %>% 
+	group_by(Antibiotic) %>% 
+	summarise(n = mean(ddd_1000)) %>% 
+	ggplot(aes(reorder(Antibiotic, n), n, fill = Antibiotic)) + 
+	geom_bar(stat = "identity") + 
+	geom_text(aes(label = format(round_half_up(n), big.mark = ",")), hjust = -0.2, size = 3) +
+	labs(title = "Consumption of antimicrobial in Access Group", 
+			 x = "Antimicrobial", y = "DDDs/1000 patient days") +
+	scale_y_continuous(expand = expansion(mult = c(0.01, .15))) +
+	coord_flip() + 
+	theme_classic() +
+	theme(legend.position = "non",
+				axis.text = element_text(colour = "black"),
+				plot.title = element_text(hjust = 0.5, colour = "black", face = "bold" ))
+```
+```{r AB in watch group}
+data %>% 
+	select(Antibiotic, monitoring, ddd_1000) %>% 
+	filter(monitoring == "Watch") %>% 
+	group_by(Antibiotic) %>% 
+	summarise(n = mean(ddd_1000)) %>% 
+	ggplot(aes(reorder(Antibiotic, n), n, fill = Antibiotic)) + 
+	geom_bar(stat = "identity") + 
+	geom_text(aes(label = format(round_half_up(n), big.mark = ",")), hjust = -0.2, size = 3) +
+	labs(title = "Consumption of antimicrobial in Watch Group", 
+			 x = "Antimicrobial", y = "DDDs/1000 patient days") +
+	scale_y_continuous(expand = expansion(mult = c(0.01, .15))) +
+	coord_flip() +
+	theme_classic() +
+	theme(legend.position = "non",
+				axis.text = element_text(colour = "black"),
+				plot.title = element_text(hjust = 0.5, colour = "black", face = "bold" ))
+```
+
+
+
+### 4.  Limitation
+
+
+
+
+### 4.  Recommendation
