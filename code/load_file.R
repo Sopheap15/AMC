@@ -128,6 +128,9 @@ list.files("data1", pattern = ".xls", full.names = T) %>%
 ls()
 
 
+
+
+
 data %>% 
 	filter(!is.na(monitoring)) %>% 
 	group_by(monitoring, month) %>% 
@@ -168,11 +171,6 @@ mutate(Antibiotic = paste0(Antibiotic," (", route,")")) %>% view()
 
 	
 	
-	
-	data %>% 
-		filter(!is.na(monitoring)) %>% 
-		group_by(monitoring) %>% 
-		summarise(sum(ddd_1000)) %>% view()
 	
 	
 	
