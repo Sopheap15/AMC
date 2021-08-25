@@ -1,7 +1,6 @@
 ---
-title: "Antimicrobial consumption"
-author: "Oeng Sopheap"
-date: "8/18/2021"
+title: "<center> Antimicrobial consumption </center>"
+date: "<center>`r format(Sys.Date(), '%d-%m-%Y')`</center>"
 output: html_document
 ---
 
@@ -16,7 +15,7 @@ knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.align = 'c')
 ```
 
 ## 1. Objectives
-The purpose of performing antimicrobial consumption monitoring is to evaluate the trends in antimicrobial use and monitor the progress of antimicrobial stewardship (AMS) program initiative.
+The purpose of performing antimicrobial consumption monitoring is to evaluate the trends in antimicrobial use and monitor the progress of antimicrobial stewardship (AMS) program initiative.  
 ## 2. Background
 Antimicrobial usage is the main driver for promoting antibiotic resistance which is considered one of the major health challenges in human and veterinary medicine. To be insightful and able to take action on time, data of antimicrobial consumption should be collected, analysed and communicated regularly. In addition, methods for data analysis should be simple, reproducible and timely. Luckily, R Markdown embed with R programming language are able to generate reports effectively with required minimum computer skill.  
 
