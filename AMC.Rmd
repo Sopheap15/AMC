@@ -15,120 +15,15 @@ knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.align = 'c')
 ```
 
 ## 1. Objectives
-The purpose of performing antimicrobial consumption monitoring is to evaluate the trends in antimicrobial use and monitor the progress of antimicrobial stewardship (AMS) program initiative.  
+The purpose of performing antimicrobial consumption monitoring is to evaluate the trends in antimicrobial use and monitor the progress of antimicrobial stewardship (AMS) program initiative.   
+
 ## 2. Background
-Antimicrobial usage is the main driver for promoting antibiotic resistance which is considered one of the major health challenges in human and veterinary medicine. To be insightful and able to take action on time, data of antimicrobial consumption should be collected, analysed and communicated regularly. In addition, methods for data analysis should be simple, reproducible and timely. Luckily, R Markdown embed with R programming language are able to generate reports effectively with required minimum computer skill.  
+Antimicrobial usage is the main driver for promoting antibiotic resistance which is considered one of the major health challenges in human and veterinary medicine. To be insightful and able to take action on time, data of antimicrobial consumption should be collected, analysed and communicated regularly. In addition, methods for data analysis should be simple, reproducible and timely. 
 
-To generate reports, raw data was extracted from hospital inventory system "HosDID" into excel and then imported to R programming for cleaning, analysis and generating reports in an HTML file. The HTML file can be shared with relevant stakeholders for quality improvement. 
+Pharmacists in government hospital work closely with the Diagnostic Microbiology Develop Program [(DMDP)](www.dmdp.org) pharmacy mentors to generate a comprehensive report. Raw data was extracted from hospital inventory system "HosDID" into Excel and then imported to R programming for cleaning, analysis and generating reports. The report is in HTML format with is able to open with a wide range of devices. Furthermore, pharmacists in government hospital communicate this finding regularly among hospital members.  
 
-## 3. Antimicrobial consumption
 
-```{r library}
-library(tidyverse)
-library(rio)
-library(janitor)
-library(kableExtra)
-library(AMR)
-```
-
-```{r import dic}
-# Import dic
-dic <- import("dic/dictionary.xlsx", sheet = "Dict")
-patient_day <- import("dic/dictionary.xlsx", sheet = "Patient_day") %>% 
-	filter(row_number() <= n() - 1) %>% clean_names()
-```
-
-```{r import data}
-# import data function
-read_file <- function(data, sheet, m){
-	import(data, skip = 7, sheet = sheet) %>% 
-		clean_names() %>% 
-		remove_empty() %>% 
-		filter(row_number() <= n() - 2) %>% 
-		select(commodity_name, line_total, form, strength) %>% 
-		mutate(month = rep(m, length(commodity_name))) 
-}
-
-# Import data
-# Jan----
-Jan <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-					sheet = "Jan",
-					m = "Jan")
-# Feb----
-Feb <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "Feb",
-								 m = "Feb")
-# Mar----
-Mar <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "March",
-								 m = "Mar")
-# Apr----
-Apr <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "April",
-								 m = "Apr")
-# May----
-May <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "May",
-								 m = "May")
-# June-----
-Jun <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "June",
-								 m = "Jun")
-# July----
-Jul <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-					sheet = "July",
-					m = "Jul")
-# Aug----
-Aug <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-					sheet = "Auguast",
-					m = "Aug")
-# Sep----
-Sep <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "September",
-								 m = "Sep")
-# Oct----
-Oct <- read_file(data = "data/octoberrptmonthlyconsumption.xls", 
-								 sheet = "Sheet1",
-								 m = "Oct")
-# Nov----
-Nov <- read_file(data = "data/Nov.xlsx", 
-								 sheet = "Sheet1",
-								 m = "Nov")
-# Dec----
-
-Dec <- read_file(data = "data/decemberrptmonthlyconsumption.xls", 
-								 sheet = "Sheet1",
-								 m = "Dec")
-
-```
-
-```{r bind and cleaning}
-# Binding row-----
-data <- bind_rows(Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec) %>% 
-	distinct(commodity_name, form, strength, month, .keep_all = TRUE) %>%
-	filter(commodity_name %in% dic$commodity_name) 
-
-data <- left_join(data,dic) %>% left_join(patient_day) %>% 
-	mutate(ddd_1000 = round(as.numeric(line_total) * as.numeric(gram) * 1000 / (as.numeric(ddd) * patient_day), 2),
-				 Antibiotic = ab_name(Abbr),
-				 Antibiotic = paste0(Antibiotic, " (", route,")"),
-				 month = factor(month, levels = month.abb))
-
-# data %>% 
-# 	group_by(monitoring) %>% 
-# 	summarise(sum(ddd_1000)) %>% view()
-
-# data %>% 
-# 	pivot_wider(names_from = month, values_from = ddd_1000) %>% 
-# 	arrange(commodity_name) %>%
-# 	adorn_totals("col") %>% view()
-# 	mutate(Total_gram = as.numeric(gram) * Total,
-# 				 Gram_ddd = as.numeric(ddd) * Total_gram,
-# 				 ddd_1000 = Total_gram * 1000/sum(patient_day$Patient_day),
-# 				 Antibiotic = ab_name(Abbr))
-	
-```
-### 3.1 Monthly antimicrobial dispensing
+## 3. Monthly antimicrobial dispensing
 Data from Siem Reap in 2019   
 
 ```{r dispensing}
@@ -144,10 +39,11 @@ data %>%
 		
 ```
 
+## 4. Antimicrobial consumption
 <br>
-To calculate antimicrobial consumption, we convert antimicrobial dispensing to defined daily doses. We have `r format(round_half_up(sum(data$ddd_1000)), big.mark=",")` DDDs/1000 patient days.
+To be able to compare antimicrobial consumption, we follow the WHO guideline to convert antimicrobial dispensing to defined daily doses (DDDs). Sum up of all antimicrobial, we have `r format(round_half_up(sum(data$ddd_1000)), big.mark=",")` DDDs/1000 patient days.
 
-### 3.2 Monthly Antimicrobial consumption
+### 4.1 Monthly Antimicrobial consumption
 
 ```{r monthly consumption}
 data %>% 
@@ -167,7 +63,7 @@ data %>%
 
 ```
 
-### 3.2 Define Daily Dose  
+### 4.2 Define Daily Dose  
 ```{r ddd}
 data %>% 
 	group_by(Antibiotic) %>% 
@@ -187,7 +83,7 @@ data %>%
 
 ```
 
-### 3.3 Antimicrobial in AWaRe Group  
+### 4.3 Antimicrobial in AWaRe Group  
 
 ```{r AB AWaRe}
 
@@ -256,9 +152,9 @@ data %>%
 
 
 
-### 4.  Limitation
+### 5.  Limitation
 
 
 
 
-### 4.  Recommendation
+### 6.  Recommendation
