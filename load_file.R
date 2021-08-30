@@ -20,6 +20,8 @@ dic <- import("dic/dictionary.xlsx", sheet = "Dict")
 patient_day <- import("dic/dictionary.xlsx", sheet = "Patient_day") %>% 
 	filter(row_number() <= n() - 1) %>% clean_names()
 
+total_patient <- sum(patient_day$patient_day, na.rm = T) # Total patient for a whole year
+
 # Import data
 
 # Jan----
@@ -71,71 +73,21 @@ Dec <- read_file(data = "data/decemberrptmonthlyconsumption.xls",
 								 sheet = "Sheet1",
 								 month = "Dec")
 
-
-
-
-
-
-
-
-# import data function
-read_file <- function(data, sheet, m){
-	import(data, skip = 7, sheet = sheet) %>% 
-		clean_names() %>% 
-		remove_empty() %>% 
-		filter(row_number() <= n() - 2) %>% 
-		select(commodity_name, line_total, form, strength) %>% 
-		mutate(month = rep(m, length(commodity_name))) 
-}
-
-# Import data
-
-
-
 # combine data----
 data <- bind_rows(Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec) %>% 
 	#distinct(commodity_name, form, strength, month, .keep_all = TRUE) %>%
 	filter(commodity_name %in% dic$commodity_name) 
 
-data <- left_join(data,dic) %>% left_join(patient_day) %>% 
-	mutate(ddd_1000 = round(as.numeric(line_total) * as.numeric(gram) * 1000 / (as.numeric(ddd) * patient_day), 2),
-				 Antibiotic = ab_name(Abbr),
+# joining data and dictionary
+data <- left_join(data, dic) %>% 
+	left_join(patient_day) %>% 
+	mutate(Antibiotic = ab_name(Abbr),
 				 Antibiotic = paste0(Antibiotic, " (", route,")"),
-				 month = factor(month, levels = month.abb))
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	
-
-
-
-
-
-
-
-# 
-# list.files("data", pattern = ".xls", full.names = T) %>% 
-# 	purrr::set_names(stringr::str_remove(basename(.),'.xls$')) %>%
-# 	purrr::iwalk(function(x, i) assign(i, readxl::read_excel(x, skip = 7), .GlobalEnv)) 
-# 
-
-
-
-	
-	
-	
-	
-	
+				 month = factor(month, levels = month.abb),
+				 gram_ddd = as.numeric(line_total) * as.numeric(gram) / as.numeric(ddd),
+				 ddd_1000_pmonth = gram_ddd * 1000 / patient_day) %>% 
+	group_by(Antibiotic) %>% 
+	mutate(ddd_1000_pyear = sum(gram_ddd) * 1000 / total_patient) %>% view()
 
 
 
