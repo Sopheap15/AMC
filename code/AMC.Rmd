@@ -1,10 +1,11 @@
 ---
-title: "Antimicrobial consumption"
-author: "Oeng Sopheap"
-date: "8/18/2021"
-output: html_document
+title: "<center> `r toupper(hospital)` <br> <span style='color:red'> Antimicrobial Consumption </span></center>"
+date: "<center> Reported date: `r format(Sys.Date(), '%d-%m-%Y')`</center>"
+output:
+  html_document:
+    theme: cerulean
+    code_folding: hide
 ---
-
 <style>
 .table-hover > tbody > tr:hover { 
   background-color: #f4f442;
@@ -16,121 +17,15 @@ knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.align = 'c')
 ```
 
 ## 1. Objectives
-The purpose of performing antimicrobial consumption monitoring is to evaluate the trends in antimicrobial use and monitor the progress of antimicrobial stewardship (AMS) program initiative.
+The purpose of performing antimicrobial consumption monitoring is to evaluate the trends in antimicrobial use and monitor the progress of antimicrobial stewardship (AMS) program initiative.   
+
 ## 2. Background
-Antimicrobial usage is the main driver for promoting antibiotic resistance which is considered one of the major health challenges in human and veterinary medicine. To be insightful and able to take action on time, data of antimicrobial consumption should be collected, analysed and communicated regularly. In addition, methods for data analysis should be simple, reproducible and timely. Luckily, R Markdown embed with R programming language are able to generate reports effectively with required minimum computer skill.  
+Antimicrobial usage is the main driver for promoting antibiotic resistance which is considered one of the major health challenges in human and veterinary medicine. To be insightful and able to take action on time, data of antimicrobial consumption should be collected, analysed and communicated regularly. In addition, methods for data analysis should be simple, reproducible and timely. 
 
-To generate reports, raw data was extracted from hospital inventory system "HosDID" into excel and then imported to R programming for cleaning, analysis and generating reports in an HTML file. The HTML file can be shared with relevant stakeholders for quality improvement. 
+Pharmacists in government hospitals work closely with the Diagnostic Microbiology Develop Program [(DMDP)](www.dmdp.org) pharmacy mentors to generate a comprehensive report. Raw data was extracted from the hospital inventory system "HosDID" into Excel and then imported to R programming for cleaning, analysis and generating reports. The report is in HTML format which is able to open with a wide range of devices. Furthermore, pharmacists in government hospitals communicate these findings regularly among hospital staff.  
 
-## 3. Antimicrobial consumption
-
-```{r library}
-library(tidyverse)
-library(rio)
-library(janitor)
-library(kableExtra)
-library(AMR)
-```
-
-```{r import dic}
-# Import dic
-dic <- import("dic/dictionary.xlsx", sheet = "Dict")
-patient_day <- import("dic/dictionary.xlsx", sheet = "Patient_day") %>% 
-	filter(row_number() <= n() - 1) %>% clean_names()
-```
-
-```{r import data}
-# import data function
-read_file <- function(data, sheet, m){
-	import(data, skip = 7, sheet = sheet) %>% 
-		clean_names() %>% 
-		remove_empty() %>% 
-		filter(row_number() <= n() - 2) %>% 
-		select(commodity_name, line_total, form, strength) %>% 
-		mutate(month = rep(m, length(commodity_name))) 
-}
-
-# Import data
-# Jan----
-Jan <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-					sheet = "Jan",
-					m = "Jan")
-# Feb----
-Feb <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "Feb",
-								 m = "Feb")
-# Mar----
-Mar <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "March",
-								 m = "Mar")
-# Apr----
-Apr <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "April",
-								 m = "Apr")
-# May----
-May <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "May",
-								 m = "May")
-# June-----
-Jun <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "June",
-								 m = "Jun")
-# July----
-Jul <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-					sheet = "July",
-					m = "Jul")
-# Aug----
-Aug <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-					sheet = "Auguast",
-					m = "Aug")
-# Sep----
-Sep <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
-								 sheet = "September",
-								 m = "Sep")
-# Oct----
-Oct <- read_file(data = "data/octoberrptmonthlyconsumption.xls", 
-								 sheet = "Sheet1",
-								 m = "Oct")
-# Nov----
-Nov <- read_file(data = "data/Nov.xlsx", 
-								 sheet = "Sheet1",
-								 m = "Nov")
-# Dec----
-
-Dec <- read_file(data = "data/decemberrptmonthlyconsumption.xls", 
-								 sheet = "Sheet1",
-								 m = "Dec")
-
-```
-
-```{r bind and cleaning}
-# Binding row-----
-data <- bind_rows(Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec) %>% 
-	distinct(commodity_name, form, strength, month, .keep_all = TRUE) %>%
-	filter(commodity_name %in% dic$commodity_name) 
-
-data <- left_join(data,dic) %>% left_join(patient_day) %>% 
-	mutate(ddd_1000 = round(as.numeric(line_total) * as.numeric(gram) * 1000 / (as.numeric(ddd) * patient_day), 2),
-				 Antibiotic = ab_name(Abbr),
-				 Antibiotic = paste0(Antibiotic, " (", route,")"),
-				 month = factor(month, levels = month.abb))
-
-# data %>% 
-# 	group_by(monitoring) %>% 
-# 	summarise(sum(ddd_1000)) %>% view()
-
-# data %>% 
-# 	pivot_wider(names_from = month, values_from = ddd_1000) %>% 
-# 	arrange(commodity_name) %>%
-# 	adorn_totals("col") %>% view()
-# 	mutate(Total_gram = as.numeric(gram) * Total,
-# 				 Gram_ddd = as.numeric(ddd) * Total_gram,
-# 				 ddd_1000 = Total_gram * 1000/sum(patient_day$Patient_day),
-# 				 Antibiotic = ab_name(Abbr))
-	
-```
-### 3.1 Monthly antimicrobial dispensing
-Data from Siem Reap in 2019   
+## 3. Monthly antimicrobial dispensing
+Data is calculated from <span style="color:red">**`r format(start_date,"%d/%b")` - `r format(end_date, "%d/%b/%Y")`** </span>
 
 ```{r dispensing}
 data %>% 
@@ -144,38 +39,22 @@ data %>%
   scroll_box(width = "110%", height = "800px")
 		
 ```
-
-<br>
-To calculate antimicrobial consumption, we convert antimicrobial dispensing to defined daily doses. We have `r format(round_half_up(sum(data$ddd_1000)), big.mark=",")` DDDs/1000 patient days.
-
-### 3.2 Monthly Antimicrobial consumption
-
-```{r monthly consumption}
-data %>% 
+## 4. Antimicrobial consumption (AMC)
+```{r ddd_1000_pyear}
+da <- data %>% 
 	filter(!is.na(monitoring)) %>% 
-	group_by(monitoring, month) %>% 
-	summarise(n = sum(ddd_1000)) %>% 
-	group_by(month) %>% 
-	mutate(pro = round_half_up(n/sum(n)*100)) %>% 
-	ggplot(aes(month, pro, fill = monitoring)) +
-	geom_bar(stat = "identity") +
-	geom_text(aes(label = pro), position = position_stack(vjust = 0.5)) +
-	labs(x = "Month", y = "Proportion (%)", title = "WHO AWaRe classification") +
-	theme_bw() +
-	theme(plot.title = element_text(color = "black", face = "bold", hjust = 0.5),
-				legend.title = element_blank()) +
-	scale_fill_manual(values = c("#88cc00","#ffcc00"))
-
+	distinct(monitoring, ddd_1000_pyear, .keep_all = T) %>% 
+	group_by(Antibiotic, ddd_1000_pyear)
 ```
 
-### 3.2 Define Daily Dose  
+To be able to compare AMC, we follow the WHO guideline to convert antimicrobial dispensing to defined daily doses (DDDs). Sum up of all antimicrobial, we have `r round_half_up(sum(da$ddd_1000_pyear))` DDDs/1000 patient days.
+
+### 4.1 Defined Daily Doses (DDDs)  
 ```{r ddd}
-data %>% 
-	group_by(Antibiotic) %>% 
-	summarise(ddd_1000 = round(mean(ddd_1000),1)) %>% 
-	ggplot(aes(reorder(Antibiotic, ddd_1000), ddd_1000, fill = Antibiotic)) + 
+da %>% 
+	ggplot(aes(reorder(Antibiotic, ddd_1000_pyear), ddd_1000_pyear, fill = Antibiotic)) + 
 	geom_bar(stat = "identity") + 
-	geom_text(aes(label = format(ddd_1000, big.mark = ",")), hjust = -0.2, size = 3) +
+	geom_text(aes(label = format(round_half_up(ddd_1000_pyear), big.mark = ",")), hjust = -0.2, size = 3) +
 	coord_flip() +
 	scale_y_continuous(expand = expansion(mult = c(0, .2))) +
 	labs(x = "Antimicrobial",
@@ -188,25 +67,49 @@ data %>%
 
 ```
 
-### 3.3 Antimicrobial in AWaRe Group  
+### 4.2 WHO AWaRe Groups
+
+As part of the 2017 essential medicines list, WHO introduced a new categorization of antibiotics to guide prescriptions and treatment – AWaRe – and this has been updated in 2019 (23). The AWaRe categorization is based on a methodological approach that takes into consideration the treatment guidelines of the most frequent infectious disease syndromes. The Access group contains antibiotics intended to be used as first- and second-choice therapy. These antibiotics should be consistently available in an appropriate quality and for an affordable price in every country. The Watch group includes mainly broad-spectrum antibiotics, which, because of their higher potential to induce the development of resistance or their unfavourable benefit–risk balance (or both), should only be used for specific indications. The Reserve group represents last resort antibiotics that should only be used if other antibiotics do not work anymore. The AWaRe categorization is supposed to be applied as a tool for antimicrobial stewardship purposes, and should assist countries in their efforts towards optimizing antimicrobial use. The overall goal is to reduce the use of Watch and Reserve group antibiotics, and to increase the relative use and the availability of Access group antibiotics, where needed. In the recent AWaRe campaign, WHO promoted a target of 60% for the use of Access group antibiotics at country level, which should be achieved by 2023 (31). This target has been set for national-level consumption, which is mainly attributed to the consumption arising from outpatients and community care. Nevertheless, the AWaRe categorization might be used for establishing targets adapted to the hospital setting to support local antimicrobial stewardship programmes, and it might serve as an aid in developing restricted formularies (32). 
+
+### 4.2.1 Monthly AMC
+
+```{r monthly consumption}
+data %>% 
+	filter(!is.na(monitoring)) %>% 
+	distinct(monitoring, month, .keep_all = T) %>% 
+	group_by(monitoring, month) %>% 
+	summarise(n = sum(ddd_1000_pmonth),.groups = "drop") %>% 
+	group_by(month) %>% 
+	mutate(pro = round_half_up(n/sum(n)*100)) %>% 
+	ggplot(aes(month, pro, fill = monitoring)) +
+	geom_bar(stat = "identity") +
+	geom_text(aes(label = pro), position = position_stack(vjust = 0.5)) +
+	labs(x = "Month", y = "Proportion (%)", title = "Monthly WHO AWaRe Groups") +
+	theme_bw() +
+	theme(plot.title = element_text(color = "black", face = "bold", hjust = 0.5),
+				legend.title = element_blank()) +
+	scale_fill_manual(values = c("#88cc00","#ffcc00"))
+
+```
+  
+### 4.3.1 Yearly AMC
 
 ```{r AB AWaRe}
 
-da <- data %>% 
-	filter(!is.na(monitoring)) %>% 
+d <- da %>% 
 	group_by(monitoring) %>% 
-	summarise(n = sum(ddd_1000)) %>% 
+	summarise(n = sum(ddd_1000_pyear)) %>% 
 	ungroup() %>% 
 	mutate(pct = round_half_up(n/sum(n)*100)) 
 
-da %>% 
+d %>% 
 	ggplot(aes(x = '', y = pct, fill = monitoring)) + 
 	geom_bar(stat = "identity") +
 	geom_label(aes(label = paste0(monitoring, "\n", pct, "%")),
 						position = position_stack(vjust = 0.5)) + 
 	coord_polar("y", start = 0, direction = -1) +
- labs(title = "Antimicrobial in WHO AWaRe Groups", 
-			 subtitle = paste0("(n= ", format(round_half_up(sum(da$n)), big.mark = ","),")")) + 
+ labs(title = "Yearly WHO AWaRe Groups", 
+			 subtitle = paste0("(n= ", format(round_half_up(sum(d$n)), big.mark = ","),")")) + 
 	theme_void() +
 	theme(legend.position = "non",
 				plot.title = element_text(hjust = 0.5,
@@ -219,15 +122,14 @@ da %>%
 ```
 
 ```{r AB in access group}
-data %>% 
-	select(Antibiotic, monitoring, ddd_1000) %>% 
+da %>% 
 	filter(monitoring == "Access") %>% 
 	group_by(Antibiotic) %>% 
-	summarise(n = mean(ddd_1000)) %>% 
+	summarise(n = mean(ddd_1000_pyear)) %>% 
 	ggplot(aes(reorder(Antibiotic, n), n, fill = Antibiotic)) + 
 	geom_bar(stat = "identity") + 
 	geom_text(aes(label = format(round_half_up(n), big.mark = ",")), hjust = -0.2, size = 3) +
-	labs(title = "Consumption of antimicrobial in Access Group", 
+	labs(title = "Yearly AMC in Access Group", 
 			 x = "Antimicrobial", y = "DDDs/1000 patient days") +
 	scale_y_continuous(expand = expansion(mult = c(0.01, .15))) +
 	coord_flip() + 
@@ -237,15 +139,14 @@ data %>%
 				plot.title = element_text(hjust = 0.5, colour = "black", face = "bold" ))
 ```
 ```{r AB in watch group}
-data %>% 
-	select(Antibiotic, monitoring, ddd_1000) %>% 
+da %>% 
 	filter(monitoring == "Watch") %>% 
 	group_by(Antibiotic) %>% 
-	summarise(n = mean(ddd_1000)) %>% 
+	summarise(n = mean(ddd_1000_pyear)) %>% 
 	ggplot(aes(reorder(Antibiotic, n), n, fill = Antibiotic)) + 
 	geom_bar(stat = "identity") + 
 	geom_text(aes(label = format(round_half_up(n), big.mark = ",")), hjust = -0.2, size = 3) +
-	labs(title = "Consumption of antimicrobial in Watch Group", 
+	labs(title = "Yearly AMC in Watch Group", 
 			 x = "Antimicrobial", y = "DDDs/1000 patient days") +
 	scale_y_continuous(expand = expansion(mult = c(0.01, .15))) +
 	coord_flip() +
@@ -255,11 +156,12 @@ data %>%
 				plot.title = element_text(hjust = 0.5, colour = "black", face = "bold" ))
 ```
 
+### 5.  Limitations
+This report has limitations that need to be recognized:  
+* The quality of this report is only as reliable as the quality of the data provided by HosDID to generate this report.  
+* Antibiotics purchased from private pharmacies for patients are not included in HosDID data.  
+* DDDs are a unit of measure intended for an adult population. This data may include data from pediatric patients, who generally require a lower total daily dose of an antibiotic compared to adults.   
+* AMC monitoring only provides quantitative data; more informative qualitative data can be obtained through conducting an antimicrobial Point Prevalence Survey (PPS).
 
+### 6.  Recommendation
 
-### 4.  Limitation
-
-
-
-
-### 4.  Recommendation
