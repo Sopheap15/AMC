@@ -14,16 +14,24 @@ read_file <- function(data, sheet="Sheet", month){
 		select(commodity_name, line_total, form, strength) %>% 
 		mutate(month = rep(month, length(commodity_name))) 
 }
-
 # Import dictionary----
 dic <- import("dic/dictionary.xlsx", sheet = "Dict")
-patient_day <- import("dic/dictionary.xlsx", sheet = "Patient_day") %>% 
-	filter(row_number() <= n() - 1) %>% clean_names()
+patient_day <- import("dic/dictionary.xlsx", sheet = "Patient_day") %>%
+	remove_empty("cols") %>% 
+	filter(row_number() <= n() - 1) %>% 
+	clean_names()
+
+start_date <- excel_numeric_to_date(as.numeric(as.character(patient_day[1,"parameter"])),date_system = "modern") # start date
+end_date <- excel_numeric_to_date(as.numeric(as.character(patient_day[2,"parameter"])),date_system = "modern") # end date
+
+hospital <- patient_day[3,"parameter"] # hospital name
 
 total_patient <- sum(patient_day$patient_day, na.rm = T) # Total patient for a whole year
 
-# Import data
 
+
+
+# Import data
 # Jan----
 Jan <- read_file(data = "data/Jan-Sep 2019, monthlyconsumption extracted from Hosdid.xls", 
 								 sheet = "Jan",

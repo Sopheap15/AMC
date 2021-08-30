@@ -1,6 +1,6 @@
 ---
-title: "<center> ANTIMICROBIAL CONSUMPTION </center>"
-date: "<center>`r format(Sys.Date(), '%d-%m-%Y')`</center>"
+title: "<center> `r toupper(hospital)` <br> <span style='color:red'> Antimicrobial Consumption </span></center>"
+date: "<center> Reported date: `r format(Sys.Date(), '%d-%m-%Y')`</center>"
 output: 
     html_document:
         theme: cerulean
@@ -24,8 +24,8 @@ Antimicrobial usage is the main driver for promoting antibiotic resistance which
 
 Pharmacists in government hospitals work closely with the Diagnostic Microbiology Develop Program [(DMDP)](www.dmdp.org) pharmacy mentors to generate a comprehensive report. Raw data was extracted from the hospital inventory system "HosDID" into Excel and then imported to R programming for cleaning, analysis and generating reports. The report is in HTML format which is able to open with a wide range of devices. Furthermore, pharmacists in government hospitals communicate these findings regularly among hospital staff.  
 
-## 3. Monthly antimicrobial dispensing[a][b]
-Data from Siem Reap in 2019   
+## 3. Monthly antimicrobial dispensing
+Data is calculated from <span style="color:red">**`r format(start_date,"%d/%b")` - `r format(end_date, "%d/%b/%Y")`** </span>
 
 ```{r dispensing}
 data %>% 
