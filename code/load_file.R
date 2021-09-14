@@ -105,7 +105,7 @@ data <- left_join(data, dic) %>%
 
 
 
-
+	
 
 
 
