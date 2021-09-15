@@ -1,5 +1,6 @@
-# load library
+# load library----
 library(tidyverse)
+library(ggtext)
 library(rio)
 library(janitor)
 library(kableExtra)
@@ -96,12 +97,22 @@ data <- left_join(data, dic) %>%
 	mutate(Antibiotic = ab_name(Abbr),
 				 Antibiotic = paste0(Antibiotic, " (", route,")"),
 				 month = factor(month, levels = month.abb),
-				 gram_ddd = as.numeric(line_total) * as.numeric(gram) / as.numeric(ddd),
-				 ddd_1000_pmonth = gram_ddd * 1000 / patient_day) %>% 
+				 gram_ddd = as.numeric(line_total) * as.numeric(gram) / as.numeric(ddd)) %>%
 	group_by(Antibiotic) %>% 
 	mutate(ddd_1000_pyear = sum(gram_ddd) * 1000 / total_patient)
 
-
+# Calculate quarterly----
+quarter <- data %>%
+	mutate(Q = paste0("Q",lubridate::quarter(match(month, month.abb)))) %>%
+	group_by(Q) %>% 
+	mutate(Qpatient_day = sum(unique(patient_day))) %>% 
+	group_by(Antibiotic, Q, monitoring) %>% 
+	summarise(Qgram_ddd_1000 = round(sum(gram_ddd) * 1000 / Qpatient_day, 1)) %>%
+	distinct(Antibiotic, Q, Qgram_ddd_1000) %>% 
+	group_by(Q, monitoring) %>% 
+	summarise(total = sum(Qgram_ddd_1000)) %>% 
+	group_by(Q) %>% 
+	mutate(prop = round_half_up(total*100/sum(total)))
 
 
 

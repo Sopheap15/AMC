@@ -53,7 +53,10 @@ Antimicrobial resistance (AMR) is a significant threat to health and human devel
 
 National guidelines for Antimicrobial stewardship (AMS) in healthcare facilities endorsed by Cambodian Ministry of Health in September 2019 points out AMC monitoring as one of the key surveillance activities conducted by an AMS team in order to improve rational use of antimicrobials within a healthcare facility.
 
-Performing AMC monitoring provides a wide range of advantages including: evaluate the trends in antimicrobial use by identifying the baseline and follow-up monitoring of overall hospital-wide AMC, most commonly used antimicrobials, wards that use the most antimicrobials... identify the areas requiring AMS initiative and monitor the progress of AMS intervention link antimicrobial exposure to the development of AMR
+Performing AMC monitoring provides a wide range of advantages including:   
+- evaluate the trends in antimicrobial use by identifying the baseline and follow-up monitoring of overall hospital-wide AMC, most commonly used antimicrobials, wards that use the most antimicrobials...   
+- identify the areas requiring AMS initiative and monitor the progress of AMS intervention link antimicrobial exposure to the development of AMR  
+- link antimicrobial exposure to the development of AMR  
 
 ## 2. Methodology for measuring antimicrobial consumption
 
@@ -88,13 +91,33 @@ data %>%
 
 ```{r ddd_1000_pyear}
 da <- data %>% 
-	filter(!is.na(monitoring)) %>% 
+	#filter(!is.na(monitoring)) %>% 
 	distinct(monitoring, ddd_1000_pyear, .keep_all = T) %>% 
 	group_by(Antibiotic, ddd_1000_pyear)
 ```
-The total antimicrobial consumption in the inpatient setting is   `r round_half_up(sum(da$ddd_1000_pyear))` DDDs/1000 patient days.
+The yearly antimicrobial consumption in the inpatient setting is   `r round_half_up(sum(da$ddd_1000_pyear))` DDDs/1000 patient days.
 
-### 4.1  Individual antimicrobial consumption
+
+```{r quartely line}
+quarter_line <- quarter %>% 
+	group_by(Q) %>% 
+	summarise(n = round_half_up(sum(total)))
+
+quarter_line %>% 
+	ggplot(aes(Q, n)) +
+	geom_line(group = 1, color = "yellowgreen", size = 1.5) + 
+	geom_point(color = "red", size = 2) +
+	geom_text(aes(label = n), hjust = 0.8 , vjust = -0.9) +
+	labs(x = "Quarter", y = "DDDs/1000 patient days", title = "Quarterly antimicrobial consumption") +
+	theme_bw() +
+	theme(plot.title = element_text(color = "black", face = "bold", hjust = 0.5),
+				axis.text = element_text(color = "black", face = "bold"),
+				legend.title = element_blank()) +
+	scale_y_continuous(limits = c(min(quarter_line$n) - 50, min(quarter_line$n) + 100)) 
+```
+
+
+### 4.1  Yearly individual antimicrobial consumption
 
 ```{r ddd}
 da %>% 
@@ -104,13 +127,10 @@ da %>%
 	coord_flip() +
 	scale_y_continuous(expand = expansion(mult = c(0, .2))) +
 	labs(x = "Antimicrobial",
-			 y = "DDDs/1000 patient days", 
-			 title = "Defined Daily Doses") +
+			 y = "DDDs/1000 patient days") +
 	theme_classic() +
 	theme(legend.position = "non",
-				plot.title = element_text(hjust = 0.5, colour = "black", face = "bold" ),
 				axis.text = element_text(colour = "black", size = 9))
-
 ```
 
 ```{r ddd_IV_PO}
@@ -121,11 +141,9 @@ da %>%
 	coord_flip() +
 	scale_y_continuous(expand = expansion(mult = c(0, .2))) +
 	labs(x = "Antimicrobial",
-			 y = "DDDs/1000 patient days", 
-			 title = "Defined Daily Doses") +
+			 y = "DDDs/1000 patient days") +
 	theme_classic() +
 	theme(legend.position = "non",
-				plot.title = element_text(hjust = 0.5, colour = "black", face = "bold" ),
 				axis.text = element_text(colour = "black", size = 9))
 ```
 
@@ -141,56 +159,28 @@ In the recent AWaRe campaign, WHO promoted a target of 60% for the use of Access
 
 ### 4.2.1 Quarterly proportion of AWaRe antibiotic consumption
 ```{r quartely}
-quarter <- data %>%
-	filter(!is.na(monitoring)) %>% 
-	mutate(Q = paste0("Q",lubridate::quarter(match(month, month.abb)))) %>%
-	group_by(Q) %>% 
-	mutate(Qpatient_day = sum(unique(patient_day))) %>% 
-	group_by(Antibiotic, Q, monitoring) %>% 
-	summarise(Qgram_ddd_1000 = round(sum(gram_ddd) * 1000 / Qpatient_day, 1)) %>%
-	distinct(Antibiotic, Q, Qgram_ddd_1000) %>% 
-	group_by(Q, monitoring) %>% 
-	summarise(total = sum(Qgram_ddd_1000)) %>% 
-	group_by(Q) %>% 
-	mutate(prop = round_half_up(total*100/sum(total)))
-
 quarter %>% 
+	filter(!is.na(monitoring)) %>% 
+	group_by(Q) %>% 
+	mutate(n = sum(total)) %>% 
+	group_by(Q, monitoring) %>% 
+	mutate(prop = round_half_up(total/n*100)) %>% 
 	ggplot(aes(Q, prop, fill = monitoring)) +
 	geom_bar(stat = "identity") +
 	geom_text(aes(label = paste0(prop,"%")), position = position_stack(vjust = 0.5)) +
-	labs(x = "Quarter", y = "Proportion (%)", title = "Quartely proportion of AWaRe antibiotic consumption") +
+	labs(x = "Quarter", y = "Proportion (%)", title = "Quarterly proportion of AWaRe antibiotic consumption") +
 	theme_bw() +
 	theme(plot.title = element_text(color = "black", face = "bold", hjust = 0.5),
 				axis.text = element_text(color = "black", face = "bold"),
 				legend.title = element_blank()) +
 	scale_fill_manual(values = c("#88cc00","#ffcc00"))
 ```
-```{r quartely line}
-quarter_line <- quarter %>% 
-	group_by(Q) %>% 
-	summarise(n = round_half_up(sum(total)))
-
-quarter_line %>% 
-	ggplot(aes(Q, n)) +
-	geom_line(group = 1, color = "yellowgreen", size = 1.5) + 
-	geom_point(color = "red", size = 2) +
-	geom_text(aes(label = n), hjust = 0.8 , vjust = -0.9) +
-	labs(x = "Quarter", y = "DDDs/1000 patient days", title = "Quartely proportion of AWaRe antibiotic consumption") +
-	theme_bw() +
-	theme(plot.title = element_text(color = "black", face = "bold", hjust = 0.5),
-				axis.text = element_text(color = "black", face = "bold"),
-				legend.title = element_blank()) +
-	scale_y_continuous(limits = c(min(quarter_line$n) - 50, min(quarter_line$n) + 100)) 
-	
-
-```
-
-
 
 ### 4.2.2 Yearly consumption of AWaRe antibiotics
 ```{r AB AWaRe}
 
 d <- da %>% 
+	filter(!is.na(monitoring)) %>% 
 	group_by(monitoring) %>% 
 	summarise(n = sum(ddd_1000_pyear)) %>% 
 	ungroup() %>% 
@@ -224,14 +214,14 @@ da %>%
 	ggplot(aes(reorder(ab_name(Abbr), n), n, fill = ab_name(Abbr))) + 
 	geom_bar(stat = "identity") + facet_wrap(~route) + 
 	geom_text(aes(label = format(round_half_up(n), big.mark = ",")), hjust = -0.2, size = 3) +
-	labs(title = "Individual consumption of Access antibiotics", 
+	labs(title = "Individual consumption of <b style='color:#009E73'> Access </b> antibiotics", 
 			 x = "Antimicrobial", y = "DDDs/1000 patient days") +
 	scale_y_continuous(expand = expansion(mult = c(0.01, .15))) +
 	coord_flip() + 
 	theme_classic() +
 	theme(legend.position = "non",
 				axis.text = element_text(colour = "black"),
-				plot.title = element_text(hjust = 0.5, colour = "black", face = "bold" ))
+				plot.title = element_markdown(lineheight = 1.1, hjust = 0.5, face = "bold"))
 ```
   
     
@@ -243,14 +233,14 @@ da %>%
 	ggplot(aes(reorder(ab_name(Abbr), n), n, fill = ab_name(Abbr))) + 
 	geom_bar(stat = "identity") + facet_wrap(~route) +
 	geom_text(aes(label = format(round_half_up(n), big.mark = ",")), hjust = -0.2, size = 3) +
-	labs(title = "Individual consumption of Watch antibiotics", 
+	labs(title = "Individual consumption of <b style='color:#FFC300'> Watch </b> antibiotics", 
 			 x = "Antimicrobial", y = "DDDs/1000 patient days") +
 	scale_y_continuous(expand = expansion(mult = c(0.01, .15))) +
 	coord_flip() +
 	theme_classic() +
 	theme(legend.position = "non",
 				axis.text = element_text(colour = "black"),
-				plot.title = element_text(hjust = 0.5, colour = "black", face = "bold" ))
+				plot.title = element_markdown(lineheight = 1.1, hjust = 0.5, face = "bold"))
 ```
 
 ## 5. Limitations
