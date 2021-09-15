@@ -20,7 +20,6 @@ text-align: justify}
 
 </style>
 
-
 ```
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.align = 'c')
@@ -48,7 +47,6 @@ knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.align = 'c')
 | WHO              | World Health Organisation                |
 +------------------+------------------------------------------+
 
-
 ## 1. Introduction
 
 Antimicrobial resistance (AMR) is a significant threat to health and human development, affecting our ability to treat a range of infections. Widespread use of antimicrobials is one of the main drivers for the development of AMR. To obtain a thorough and comprehensive picture of AMR and to be able to identify areas in which actions are needed, data from surveillance of AMR and antimicrobial consumption (AMC) are essential.
@@ -61,7 +59,7 @@ Performing AMC monitoring provides a wide range of advantages including: evaluat
 
 Pharmacists in the government hospitals, who are responsible for performing AMC monitoring, work closely with pharmacist mentors from Diagnostic Microbiology Development Program [(DMDP)](www.dmdp.org) to generate a comprehensive report by using methods that are simple, reproducible and timely.
 
-The concept and calculation of AMC are adopted from National guidelines for Antimicrobial stewardship (AMS) in healthcare facilities endorsed by Cambodian Ministry of Health in September 2019. AMC is to be measured in Defined Daily Dose (DDDs) per 1000 inpatient-day which requires two data sources: Inventory data of the antimicrobial units dispensed for inpatient setting during the surveillance period. Since antimicrobials are prescribed in different unit dose of daily administration, a standard method is used in DDD which is the average maintenance dose per day of a medicine used for its main indication in adults. It is assigned to each medicinal substance by taking into account the route of administration. The DDD is a purely technical unit; it serves as a standard measure for quantification, but does not necessarily reflect the recommended or actual use of the substance in an individual patient. The antimicrobials included in this surveillance report are antibacterials for systemic use (J01), antibiotics for alimentary tract (A07AA), nitroimidazole derivatives for protozoal diseases (P01AB) and antifungals (J02).
+The concept and calculation of AMC are adopted from National guidelines for Antimicrobial stewardship (AMS) in healthcare facilities endorsed by Cambodian Ministry of Health in September 2019. AMC is to be measured in Defined Daily Dose (DDDs) per 1000 inpatient-days which requires two data sources: Inventory data of the antimicrobial units dispensed for inpatient setting during the surveillance period. Since antimicrobials are prescribed in different unit doses of daily administration, a standard method is used in DDD which is the average maintenance dose per day of a medicine used for its main indication in adults. It is assigned to each medicinal substance by taking into account the route of administration. The DDD is a purely technical unit; it serves as a standard measure for quantification, but does not necessarily reflect the recommended or actual use of the substance in an individual patient. The antimicrobials included in this surveillance report are antibacterials for systemic use (J01), antibiotics for alimentary tract (A07AA), nitroimidazole derivatives for protozoal diseases (P01AB) and antifungals (J02).
 
 The total inpatient day data during the surveillance period. The volume of antimicrobial consumption (the total number of DDDs) must be adjusted by measures representing the hospital activity. Standardization by hospital activity data allows the comparison of data from different time periods and from different hospitals or hospital units. Here, we report hospital activity in 'inpatient days (PD)', defined as the sum of patient days during the surveillance period of time (e.g. year 2017 or first quarter of 2017).
 
@@ -94,14 +92,14 @@ da <- data %>%
 	distinct(monitoring, ddd_1000_pyear, .keep_all = T) %>% 
 	group_by(Antibiotic, ddd_1000_pyear)
 ```
-Sum up of all antimicrobials, we have `r round_half_up(sum(da$ddd_1000_pyear))` DDDs/1000 patient days.
+The total antimicrobial consumption in the inpatient setting is   `r round_half_up(sum(da$ddd_1000_pyear))` DDDs/1000 patient days.
 
-### 4.1  Individual antimicrobial consumption   
+### 4.1  Individual antimicrobial consumption
 
 ```{r ddd}
 da %>% 
-	ggplot(aes(reorder(ab_name(Abbr), ddd_1000_pyear), ddd_1000_pyear, fill = Antibiotic)) + 
-	geom_bar(stat = "identity") + facet_wrap(~ route) + 
+	ggplot(aes(reorder(Antibiotic, ddd_1000_pyear), ddd_1000_pyear, fill = Antibiotic)) + 
+	geom_bar(stat = "identity") + 
 	geom_text(aes(label = format(round_half_up(ddd_1000_pyear), big.mark = ",")), hjust = -0.2, size = 3) +
 	coord_flip() +
 	scale_y_continuous(expand = expansion(mult = c(0, .2))) +
@@ -115,39 +113,35 @@ da %>%
 
 ```
 
+```{r ddd_IV_PO}
+da %>% 
+	ggplot(aes(reorder(ab_name(Abbr), ddd_1000_pyear), ddd_1000_pyear, fill = Antibiotic)) + 
+	geom_bar(stat = "identity") + facet_wrap(~ route) + 
+	geom_text(aes(label = format(round_half_up(ddd_1000_pyear), big.mark = ",")), hjust = -0.2, size = 3) +
+	coord_flip() +
+	scale_y_continuous(expand = expansion(mult = c(0, .2))) +
+	labs(x = "Antimicrobial",
+			 y = "DDDs/1000 patient days", 
+			 title = "Defined Daily Doses") +
+	theme_classic() +
+	theme(legend.position = "non",
+				plot.title = element_text(hjust = 0.5, colour = "black", face = "bold" ),
+				axis.text = element_text(colour = "black", size = 9))
+```
+
+
 ### 4.2 WHO AWaRe Groups  
 
-As part of the 2017 essential medicines list, WHO introduced a new categorization of antibiotics to guide prescriptions and treatment -- AWaRe : Access, Watch and Reserve groups.The AWaRe categorization is based on a methodological approach that takes into consideration the treatment guidelines of the most frequent infectious disease syndromes. \* The Access group contains antibiotics intended to be used as first- and second-choice therapy. These antibiotics should be consistently available in an appropriate quality and for an affordable price in every country.\
-\* The Watch group includes mainly broad-spectrum antibiotics, which, because of their higher potential to induce the development of resistance or their unfavourable benefit--risk balance (or both), should only be used for specific indications.\
-\* The Reserve group represents last resort antibiotics that should only be used if other antibiotics do not work anymore.
+As part of the 2017 essential medicines list, WHO introduced a new categorization of antibiotics to guide prescriptions and treatment -- AWaRe : Access, Watch and Reserve groups.The AWaRe categorization is based on a methodological approach that takes into consideration the treatment guidelines of the most frequent infectious disease syndromes.   
+* The Access group contains antibiotics intended to be used as first- and second-choice therapy. These antibiotics should be consistently available in an appropriate quality and for an affordable price in every country.  
+* The Watch group includes mainly broad-spectrum antibiotics, which, because of their higher potential to induce the development of resistance or their unfavourable benefit--risk balance (or both), should only be used for specific indications.  
+* The Reserve group represents last resort antibiotics that should only be used if other antibiotics do not work anymore.  
 
 In the recent AWaRe campaign, WHO promoted a target of 60% for the use of Access group antibiotics at country level, which should be achieved by 2023 . AWaRe categorization might be used for establishing targets adapted to the hospital setting to support local antimicrobial stewardship programmes, and it might serve as an aid in developing restricted formularies.
 
-### 4.2.1 Monthly proportion of AWaRe antibiotic consumption
-
-```{r monthly consumption}
-data %>% 
-	filter(!is.na(monitoring)) %>% 
-	distinct(monitoring, month, .keep_all = T) %>% 
-	group_by(monitoring, month) %>% 
-	summarise(n = sum(ddd_1000_pmonth),.groups = "drop") %>% 
-	group_by(month) %>% 
-	mutate(pro = round_half_up(n/sum(n)*100)) %>% 
-	ggplot(aes(month, pro, fill = monitoring)) +
-	geom_bar(stat = "identity") +
-	geom_text(aes(label = pro), position = position_stack(vjust = 0.5)) +
-	labs(x = "Month", y = "Proportion (%)", title = "Monthly proportion of AWaRe antibiotic consumption") +
-	theme_bw() +
-	theme(plot.title = element_text(color = "black", face = "bold", hjust = 0.5),
-				axis.text = element_text(color = "black", face = "bold"),
-				legend.title = element_blank()) +
-	scale_fill_manual(values = c("#88cc00","#ffcc00"))
-
-```
-
-### 4.2.2 Quartely proportion of AWaRe antibiotic consumption
+### 4.2.1 Quarterly proportion of AWaRe antibiotic consumption
 ```{r quartely}
-data %>%
+quarter <- data %>%
 	filter(!is.na(monitoring)) %>% 
 	mutate(Q = paste0("Q",lubridate::quarter(match(month, month.abb)))) %>%
 	group_by(Q) %>% 
@@ -158,7 +152,9 @@ data %>%
 	group_by(Q, monitoring) %>% 
 	summarise(total = sum(Qgram_ddd_1000)) %>% 
 	group_by(Q) %>% 
-	mutate(prop = round_half_up(total*100/sum(total))) %>% 
+	mutate(prop = round_half_up(total*100/sum(total)))
+
+quarter %>% 
 	ggplot(aes(Q, prop, fill = monitoring)) +
 	geom_bar(stat = "identity") +
 	geom_text(aes(label = paste0(prop,"%")), position = position_stack(vjust = 0.5)) +
@@ -169,8 +165,29 @@ data %>%
 				legend.title = element_blank()) +
 	scale_fill_manual(values = c("#88cc00","#ffcc00"))
 ```
+```{r quartely line}
+quarter_line <- quarter %>% 
+	group_by(Q) %>% 
+	summarise(n = round_half_up(sum(total)))
 
-### 4.2.3 Yearly consumption of AWaRe antibiotics
+quarter_line %>% 
+	ggplot(aes(Q, n)) +
+	geom_line(group = 1, color = "yellowgreen", size = 1.5) + 
+	geom_point(color = "red", size = 2) +
+	geom_text(aes(label = n), hjust = 0.8 , vjust = -0.9) +
+	labs(x = "Quarter", y = "DDDs/1000 patient days", title = "Quartely proportion of AWaRe antibiotic consumption") +
+	theme_bw() +
+	theme(plot.title = element_text(color = "black", face = "bold", hjust = 0.5),
+				axis.text = element_text(color = "black", face = "bold"),
+				legend.title = element_blank()) +
+	scale_y_continuous(limits = c(min(quarter_line$n) - 50, min(quarter_line$n) + 100)) 
+	
+
+```
+
+
+
+### 4.2.2 Yearly consumption of AWaRe antibiotics
 ```{r AB AWaRe}
 
 d <- da %>% 
@@ -238,9 +255,8 @@ da %>%
 
 ## 5. Limitations
 
-This report has several limitations that should be acknowledged\
-\* Reliability of this report depends on the quality of the data provided by HosDID that is used to generate this report.\
-\* Antibiotics purchased from private pharmacies for patients are not included in HosDID data.\
-\* DDD is a unit of measure intended for an adult population. This data may include data from pediatric patients, who generally require a lower total daily dose of an antibiotic compared to adults.\
-\* AMC monitoring only provides quantitative data; more informative qualitative data can be obtained through conducting an antimicrobial Point Prevalence Survey (PPS).
-
+This report has several limitations that should be acknowledged  
+* Reliability of this report depends on the quality of the data provided by HosDID that is used to generate this report.  
+* Antibiotics purchased from private pharmacies for patients are not included in HosDID data.  
+* DDD is a unit of measure intended for an adult population. This data may include data from pediatric patients, who generally require a lower total daily dose of an antibiotic compared to adults.  
+* AMC monitoring only provides quantitative data; more informative qualitative data can be obtained through conducting an antimicrobial Point Prevalence Survey (PPS).
