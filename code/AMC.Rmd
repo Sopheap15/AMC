@@ -22,7 +22,7 @@ text-align: justify}
 
 ```
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.align = 'c')
+knitr::opts_chunk$set(echo = FALSE, results = 'hide', fig.keep = 'all', message = FALSE, fig.align = 'c')
 ```
 
 +------------------+------------------------------------------+
@@ -62,9 +62,9 @@ Performing AMC monitoring provides a wide range of advantages including:
 
 Pharmacists in the government hospitals, who are responsible for performing AMC monitoring, work closely with pharmacist mentors from Diagnostic Microbiology Development Program [(DMDP)](www.dmdp.org) to generate a comprehensive report by using methods that are simple, reproducible and timely.
 
-The concept and calculation of AMC are adopted from National guidelines for Antimicrobial stewardship (AMS) in healthcare facilities endorsed by Cambodian Ministry of Health in September 2019. AMC is to be measured in Defined Daily Dose (DDDs) per 1000 inpatient-days which requires two data sources: Inventory data of the antimicrobial units dispensed for inpatient setting during the surveillance period. Since antimicrobials are prescribed in different unit doses of daily administration, a standard method is used in DDD which is the average maintenance dose per day of a medicine used for its main indication in adults. It is assigned to each medicinal substance by taking into account the route of administration. The DDD is a purely technical unit; it serves as a standard measure for quantification, but does not necessarily reflect the recommended or actual use of the substance in an individual patient. The antimicrobials included in this surveillance report are antibacterials for systemic use (J01), antibiotics for alimentary tract (A07AA), nitroimidazole derivatives for protozoal diseases (P01AB) and antifungals (J02).
-
-The total inpatient day data during the surveillance period. The volume of antimicrobial consumption (the total number of DDDs) must be adjusted by measures representing the hospital activity. Standardization by hospital activity data allows the comparison of data from different time periods and from different hospitals or hospital units. Here, we report hospital activity in 'inpatient days (PD)', defined as the sum of patient days during the surveillance period of time (e.g. year 2017 or first quarter of 2017).
+The concept and calculation of AMC are adopted from National guidelines for Antimicrobial stewardship (AMS) in healthcare facilities endorsed by Cambodian Ministry of Health in September 2019. AMC is to be measured in Defined Daily Dose (DDDs) per 1000 inpatient-days which requires two data sources:   
+- Inventory data of the antimicrobial units dispensed for inpatient setting during the surveillance period. Since antimicrobials are prescribed in different unit doses of daily administration, a standard method is used in DDD which is the average maintenance dose per day of a medicine used for its main indication in adults. It is assigned to each medicinal substance by taking into account the route of administration. The DDD is a purely technical unit; it serves as a standard measure for quantification, but does not necessarily reflect the recommended or actual use of the substance in an individual patient. The antimicrobials included in this surveillance report are antibacterials for systemic use (J01), antibiotics for alimentary tract (A07AA), nitroimidazole derivatives for protozoal diseases (P01AB) and antifungals (J02).  
+- The total inpatient day data during the surveillance period. The volume of antimicrobial consumption (the total number of DDDs) must be adjusted by measures representing the hospital activity. Standardization by hospital activity data allows the comparison of data from different time periods and from different hospitals or hospital units. Here, we report hospital activity in 'inpatient days (PD)', defined as the sum of patient days during the surveillance period of time (e.g. year 2017 or first quarter of 2017).
 
 Raw data of antimicrobial dispensed for inpatient setting was extracted from the hospital inventory system called "Hospital Drug Inventory Database (HosDID)" into Excel and then imported to R programming for cleaning, analysis and generating reports. The report is in HTML format which is able to open with a wide range of devices.
 
@@ -74,14 +74,20 @@ Furthermore, pharmacists in government hospitals communicate these findings regu
 
 Data is calculated from [**`r format(start_date,"%d/%b")` - `r format(end_date, "%d/%b/%Y")`**]{style="color:red"}
 
-```{r dispensing}
+```{r dispensing, results='show'}
 data %>% 
+	filter(line_total > 0) %>% view()
 	select(Antibiotic, form, strength, month, line_total) %>% 
+	group_by(Antibiotic, month, strength) %>% 
+	mutate(line_total = sum(line_total)) %>%
+	distinct(Antibiotic, month, strength, line_total) %>% 
 	pivot_wider(names_from = month, values_from = line_total) %>% 
 	arrange(Antibiotic) %>% 
-	mutate_all(~replace(., is.na(.), 0)) %>% 
+	mutate_all(~ replace(., is.na(.), 0)) %>% 
 	adorn_totals("col") %>% 
+	#filter(Total > 0) %>% 
 	kable(align = c('l','l','l','c','c','c','c','c','c','c','c','c','c','c','c','r'), format.args = list(big.mark = ",")) %>% kable_styling(bootstrap_options = c("bordered","condensed", "striped", "hover","responsive")) %>% 
+	row_spec(0, background = "#FFCA33") %>% 
 	collapse_rows(columns = 1, valign = "middle") %>% 
   scroll_box(width = "110%", height = "800px")
 		
@@ -91,7 +97,7 @@ data %>%
 
 ```{r ddd_1000_pyear}
 da <- data %>% 
-	#filter(!is.na(monitoring)) %>% 
+	filter(!is.na(ddd_1000_pyear), ddd_1000_pyear > 0) %>%
 	distinct(monitoring, ddd_1000_pyear, .keep_all = T) %>% 
 	group_by(Antibiotic, ddd_1000_pyear)
 ```
@@ -100,6 +106,7 @@ The yearly antimicrobial consumption in the inpatient setting is   `r round_half
 
 ```{r quartely line}
 quarter_line <- quarter %>% 
+	filter(!is.na(total)) %>% 
 	group_by(Q) %>% 
 	summarise(n = round_half_up(sum(total)))
 
@@ -113,40 +120,40 @@ quarter_line %>%
 	theme(plot.title = element_text(color = "black", face = "bold", hjust = 0.5),
 				axis.text = element_text(color = "black", face = "bold"),
 				legend.title = element_blank()) +
-	scale_y_continuous(limits = c(min(quarter_line$n) - 50, min(quarter_line$n) + 100)) 
+	scale_y_continuous(limits = c(min(quarter_line$n) - 50, max(quarter_line$n) + 50)) 
 ```
 
 
 ### 4.1  Yearly individual antimicrobial consumption
 
-```{r ddd}
+```{r ddd, error = F}
 da %>% 
 	ggplot(aes(reorder(Antibiotic, ddd_1000_pyear), ddd_1000_pyear, fill = Antibiotic)) + 
 	geom_bar(stat = "identity") + 
 	geom_text(aes(label = format(round_half_up(ddd_1000_pyear), big.mark = ",")), hjust = -0.2, size = 3) +
 	coord_flip() +
 	scale_y_continuous(expand = expansion(mult = c(0, .2))) +
-	labs(x = "Antimicrobial",
+	labs(x = "Antimicrobials",
 			 y = "DDDs/1000 patient days") +
 	theme_classic() +
 	theme(legend.position = "non",
 				axis.text = element_text(colour = "black", size = 9))
 ```
 
-```{r ddd_IV_PO}
+```{r ddd_IV_PO, error = F, message=FALSE, }
 da %>% 
+	mutate(route=recode(route,IV="Intravenous",PO="Oral")) %>%
 	ggplot(aes(reorder(ab_name(Abbr), ddd_1000_pyear), ddd_1000_pyear, fill = Antibiotic)) + 
 	geom_bar(stat = "identity") + facet_wrap(~ route) + 
 	geom_text(aes(label = format(round_half_up(ddd_1000_pyear), big.mark = ",")), hjust = -0.2, size = 3) +
 	coord_flip() +
 	scale_y_continuous(expand = expansion(mult = c(0, .2))) +
-	labs(x = "Antimicrobial",
+	labs(x = "Antimicrobials",
 			 y = "DDDs/1000 patient days") +
 	theme_classic() +
 	theme(legend.position = "non",
 				axis.text = element_text(colour = "black", size = 9))
 ```
-
 
 ### 4.2 WHO AWaRe Groups  
 
@@ -158,7 +165,7 @@ As part of the 2017 essential medicines list, WHO introduced a new categorizatio
 In the recent AWaRe campaign, WHO promoted a target of 60% for the use of Access group antibiotics at country level, which should be achieved by 2023 . AWaRe categorization might be used for establishing targets adapted to the hospital setting to support local antimicrobial stewardship programmes, and it might serve as an aid in developing restricted formularies.
 
 ### 4.2.1 Quarterly proportion of AWaRe antibiotic consumption
-```{r quartely}
+```{r quartely, message = F}
 quarter %>% 
 	filter(!is.na(monitoring)) %>% 
 	group_by(Q) %>% 
@@ -177,7 +184,7 @@ quarter %>%
 ```
 
 ### 4.2.2 Yearly consumption of AWaRe antibiotics
-```{r AB AWaRe}
+```{r AB AWaRe, message = F}
 
 d <- da %>% 
 	filter(!is.na(monitoring)) %>% 
@@ -206,16 +213,17 @@ d %>%
 ```
   
     
-```{r AB in access group}
+```{r AB in access group, message = F}
 da %>% 
 	filter(monitoring == "Access") %>% 
 	group_by(Abbr, route) %>% 
 	summarise(n = mean(ddd_1000_pyear)) %>% 
+	mutate(route=recode(route,IV="Intravenous",PO="Oral")) %>%
 	ggplot(aes(reorder(ab_name(Abbr), n), n, fill = ab_name(Abbr))) + 
 	geom_bar(stat = "identity") + facet_wrap(~route) + 
 	geom_text(aes(label = format(round_half_up(n), big.mark = ",")), hjust = -0.2, size = 3) +
 	labs(title = "Individual consumption of <b style='color:#009E73'> Access </b> antibiotics", 
-			 x = "Antimicrobial", y = "DDDs/1000 patient days") +
+			 x = "Antimicrobials", y = "DDDs/1000 patient days") +
 	scale_y_continuous(expand = expansion(mult = c(0.01, .15))) +
 	coord_flip() + 
 	theme_classic() +
@@ -225,16 +233,17 @@ da %>%
 ```
   
     
-```{r AB in watch group}
+```{r AB in watch group, message = F}
 da %>% 
 	filter(monitoring == "Watch") %>% 
 	group_by(Abbr, route) %>% 
 	summarise(n = mean(ddd_1000_pyear)) %>% 
+	mutate(route=recode(route,IV="Intravenous",PO="Oral")) %>%
 	ggplot(aes(reorder(ab_name(Abbr), n), n, fill = ab_name(Abbr))) + 
 	geom_bar(stat = "identity") + facet_wrap(~route) +
 	geom_text(aes(label = format(round_half_up(n), big.mark = ",")), hjust = -0.2, size = 3) +
 	labs(title = "Individual consumption of <b style='color:#FFC300'> Watch </b> antibiotics", 
-			 x = "Antimicrobial", y = "DDDs/1000 patient days") +
+			 x = "Antimicrobials", y = "DDDs/1000 patient days") +
 	scale_y_continuous(expand = expansion(mult = c(0.01, .15))) +
 	coord_flip() +
 	theme_classic() +
