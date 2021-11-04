@@ -1,6 +1,6 @@
 ---
-title: "<center> `r toupper(hospital)` <br> <span style='color:red'> Antimicrobial Consumption </span></center>"
-date: "<center> Reported date: `r format(Sys.Date(), '%d-%m-%Y')`</center>"
+title: "<center> `r str_to_title(hospital)` <br> <span style='color:red'> Antimicrobial Consumption </span></center>"
+#date: "<center> Reported date: `r format(Sys.Date(), '%d-%m-%Y')`</center>"
 output: 
   html_document:
     toc: true 
@@ -8,6 +8,7 @@ output:
     toc_depth: 3
     theme: cerulean
 ---
+
 
 ```{=html}
 <style>
@@ -76,20 +77,24 @@ Data is calculated from [**`r format(start_date,"%d/%b")` - `r format(end_date, 
 
 ```{r dispensing, results='show'}
 data %>% 
-	filter(line_total > 0) %>% view()
-	select(Antibiotic, form, strength, month, line_total) %>% 
-	group_by(Antibiotic, month, strength) %>% 
-	mutate(line_total = sum(line_total)) %>%
-	distinct(Antibiotic, month, strength, line_total) %>% 
+	filter(line_total > 0) %>%
+	select(Antimicrobials = abbr, route, form, strength, month, line_total) %>% 
+	group_by(Antimicrobials, route, month, strength) %>% 
+	mutate(line_total = sum(line_total),
+				 Antimicrobials = ab_name(Antimicrobials)) %>%
+	distinct(Antimicrobials, route, month, strength, line_total) %>% 
+	arrange(month) %>% 
 	pivot_wider(names_from = month, values_from = line_total) %>% 
-	arrange(Antibiotic) %>% 
+	arrange(Antimicrobials) %>% 
 	mutate_all(~ replace(., is.na(.), 0)) %>% 
 	adorn_totals("col") %>% 
 	#filter(Total > 0) %>% 
-	kable(align = c('l','l','l','c','c','c','c','c','c','c','c','c','c','c','c','r'), format.args = list(big.mark = ",")) %>% kable_styling(bootstrap_options = c("bordered","condensed", "striped", "hover","responsive")) %>% 
-	row_spec(0, background = "#FFCA33") %>% 
+	kable(align = c('l','c','l','r','r','r','r','r','r','r','r','r','r','r'), 
+				format.args = list(big.mark = ",")) %>% 
+	kable_styling(bootstrap_options = c("bordered","condensed", "striped", "hover","responsive")) %>% 
+	row_spec(0, background = "#FFCA33", align = "c") %>% 
 	collapse_rows(columns = 1, valign = "middle") %>% 
-  scroll_box(width = "110%", height = "800px")
+  scroll_box(width = "110%", height = "600px")
 		
 ```
 
@@ -99,7 +104,7 @@ data %>%
 da <- data %>% 
 	filter(!is.na(ddd_1000_pyear), ddd_1000_pyear > 0) %>%
 	distinct(monitoring, ddd_1000_pyear, .keep_all = T) %>% 
-	group_by(Antibiotic, ddd_1000_pyear)
+	group_by(antibiotic, ddd_1000_pyear)
 ```
 The yearly antimicrobial consumption in the inpatient setting is   `r round_half_up(sum(da$ddd_1000_pyear))` DDDs/1000 patient days.
 
@@ -128,7 +133,7 @@ quarter_line %>%
 
 ```{r ddd, error = F}
 da %>% 
-	ggplot(aes(reorder(Antibiotic, ddd_1000_pyear), ddd_1000_pyear, fill = Antibiotic)) + 
+	ggplot(aes(reorder(antibiotic, ddd_1000_pyear), ddd_1000_pyear, fill = antibiotic)) + 
 	geom_bar(stat = "identity") + 
 	geom_text(aes(label = format(round_half_up(ddd_1000_pyear), big.mark = ",")), hjust = -0.2, size = 3) +
 	coord_flip() +
@@ -142,8 +147,8 @@ da %>%
 
 ```{r ddd_IV_PO, error = F, message=FALSE, }
 da %>% 
-	mutate(route=recode(route,IV="Intravenous",PO="Oral")) %>%
-	ggplot(aes(reorder(ab_name(Abbr), ddd_1000_pyear), ddd_1000_pyear, fill = Antibiotic)) + 
+	mutate(route = recode(route, IV = "Intravenous (IV)", PO = "Oral (PO)")) %>%
+	ggplot(aes(reorder(ab_name(abbr), ddd_1000_pyear), ddd_1000_pyear, fill = antibiotic)) + 
 	geom_bar(stat = "identity") + facet_wrap(~ route) + 
 	geom_text(aes(label = format(round_half_up(ddd_1000_pyear), big.mark = ",")), hjust = -0.2, size = 3) +
 	coord_flip() +
@@ -152,6 +157,8 @@ da %>%
 			 y = "DDDs/1000 patient days") +
 	theme_classic() +
 	theme(legend.position = "non",
+				strip.background = element_rect(fill = "#D6DCDC"),
+				strip.text = element_text(face = "bold"),
 				axis.text = element_text(colour = "black", size = 9))
 ```
 
@@ -216,10 +223,10 @@ d %>%
 ```{r AB in access group, message = F}
 da %>% 
 	filter(monitoring == "Access") %>% 
-	group_by(Abbr, route) %>% 
+	group_by(abbr, route) %>% 
 	summarise(n = mean(ddd_1000_pyear)) %>% 
-	mutate(route=recode(route,IV="Intravenous",PO="Oral")) %>%
-	ggplot(aes(reorder(ab_name(Abbr), n), n, fill = ab_name(Abbr))) + 
+	mutate(route = recode(route, IV = "Intravenous (IV)", PO = "Oral (PO)")) %>%
+	ggplot(aes(reorder(ab_name(abbr), n), n, fill = ab_name(abbr))) + 
 	geom_bar(stat = "identity") + facet_wrap(~route) + 
 	geom_text(aes(label = format(round_half_up(n), big.mark = ",")), hjust = -0.2, size = 3) +
 	labs(title = "Individual consumption of <b style='color:#009E73'> Access </b> antibiotics", 
@@ -229,6 +236,7 @@ da %>%
 	theme_classic() +
 	theme(legend.position = "non",
 				axis.text = element_text(colour = "black"),
+				strip.text = element_text(face = "bold"),
 				plot.title = element_markdown(lineheight = 1.1, hjust = 0.5, face = "bold"))
 ```
   
@@ -236,10 +244,10 @@ da %>%
 ```{r AB in watch group, message = F}
 da %>% 
 	filter(monitoring == "Watch") %>% 
-	group_by(Abbr, route) %>% 
+	group_by(abbr, route) %>% 
 	summarise(n = mean(ddd_1000_pyear)) %>% 
-	mutate(route=recode(route,IV="Intravenous",PO="Oral")) %>%
-	ggplot(aes(reorder(ab_name(Abbr), n), n, fill = ab_name(Abbr))) + 
+	mutate(route = recode(route, IV = "Intravenous (IV)", PO = "Oral (PO)")) %>%
+	ggplot(aes(reorder(ab_name(abbr), n), n, fill = ab_name(abbr))) + 
 	geom_bar(stat = "identity") + facet_wrap(~route) +
 	geom_text(aes(label = format(round_half_up(n), big.mark = ",")), hjust = -0.2, size = 3) +
 	labs(title = "Individual consumption of <b style='color:#FFC300'> Watch </b> antibiotics", 
@@ -249,6 +257,7 @@ da %>%
 	theme_classic() +
 	theme(legend.position = "non",
 				axis.text = element_text(colour = "black"),
+				strip.text = element_text(face = "bold"),
 				plot.title = element_markdown(lineheight = 1.1, hjust = 0.5, face = "bold"))
 ```
 
@@ -259,3 +268,9 @@ This report has several limitations that should be acknowledged
 * Antibiotics purchased from private pharmacies for patients are not included in HosDID data.  
 * DDD is a unit of measure intended for an adult population. This data may include data from pediatric patients, who generally require a lower total daily dose of an antibiotic compared to adults.  
 * AMC monitoring only provides quantitative data; more informative qualitative data can be obtained through conducting an antimicrobial Point Prevalence Survey (PPS).
+
+```{=html}
+<p align="right";> Reported by <br> 
+`r str_glue("Pharmacy team in {hospital}")` <br>
+`r format(Sys.Date(),"%d-%b-%Y")`</p>
+```
