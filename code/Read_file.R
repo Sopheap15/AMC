@@ -1,10 +1,11 @@
 # Read file function----
+
 ## Battambang
 read_file_BB <- function(x){
 	readWorksheetFromFile(x, sheet = "Sheet1", startRow = 6) %>% 
 		clean_names() %>% 
 		remove_empty(c("rows", "cols")) %>% 
-		filter(row_number() <= n() - 3) %>% 
+		filter(row_number() <= n() - 3, str_detect(tolower(code),"nc") != T) %>% 
 		select(commodity_name, line_total = outgoing, form, strength) %>% 
 		mutate(month = rep(str_extract(str_to_lower(x),"jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"), length(commodity_name))) 
 }
@@ -26,7 +27,7 @@ data %>%
 	mutate(abbr = case_when(
 		#Penicillin
 		str_detect(str_to_lower(commodity_name), "^pen(\\w+)?lin[e]?(.+)?g") ~ "PEN",
-		str_detect(str_to_lower(commodity_name), "(phen|meth)(.+)?pen(\\w+)?lin[e]?") ~ "PHE",
+		str_detect(str_to_lower(commodity_name), "(phen|meth)(.+)?pen(\\w+)?lin[e]?") ~ "PHN",
 		str_detect(str_to_lower(commodity_name), "ben(w+)?pen(\\w+)?lin[e]?") ~ "BNB",
 		str_detect(str_to_lower(commodity_name), "^amo(\\w+)?lin[e]?(?!(.+)?cla*)") ~ "AMX", 
 		str_detect(str_to_lower(commodity_name), "^amo(.+)?cla*") ~ "AMC",
@@ -78,7 +79,6 @@ data %>%
 	filter(abbr != "F", 
 				 str_detect(commodity_name,"eye|di[sck]") != TRUE) 
 }
-
 
 
 

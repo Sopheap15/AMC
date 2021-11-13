@@ -1,9 +1,11 @@
 # Import patient day----
-patient_day <- import("data/SR/SR 2020/Patient day.xlsx", sheet = "Patient_day") %>% 
+
+patient_day <- import(str_glue("{path}/Patient day.xlsx"), sheet = "Patient_day") %>% 
 	clean_names()
+t_patient_day <- sum(patient_day$patient_day, na.rm = T)
 
 #import data-----
-data <- list.files("data/SR/SR 2020", pattern = '.xls$', full.names = T) %>%
+data <- list.files(path, pattern = '.xls$', full.names = T) %>%
 	purrr::map(~read_file(.)) %>% reduce(., bind_rows) %>%
 	ab_cname() %>% 
 	mutate(commodity_name = str_to_lower(commodity_name),
@@ -23,13 +25,13 @@ data <- left_join(data, patient_day) %>%
 				 month = factor(month, levels = month.abb),
 				 gram_ddd = as.numeric(line_total) * as.numeric(gram) / as.numeric(ddd)) %>%
 	group_by(antibiotic) %>% 
-	mutate(ddd_1000_pyear = sum(gram_ddd) * 1000 / sum(patient_day, na.rm = T))
+	mutate(ddd_1000_pyear = sum(gram_ddd) * 1000 / t_patient_day)
 
 # Calculate quarterly----
 quarter <- data %>%
 	mutate(Q = paste0("Q",lubridate::quarter(match(month, month.abb)))) %>%
 	group_by(Q) %>% 
-	mutate(Qpatient_day = sum(unique(patient_day))) %>% 
+	mutate(Qpatient_day = sum(unique(patient_day), na.rm = T)) %>% 
 	group_by(antibiotic, Q, monitoring) %>% 
 	summarise(Qgram_ddd_1000 = round(sum(gram_ddd) * 1000 / Qpatient_day, 1)) %>%
 	distinct(antibiotic, Q, Qgram_ddd_1000) %>% 

@@ -3,15 +3,15 @@ source("code/dic.R",local = knitr::knit_global()) # dictionary
 source("code/read_file.R",local = knitr::knit_global()) # function read file
 
 # load file
-if (str_detect(str_to_lower(hospital),"siem\\.+?") == TRUE) {
+if (str_detect(hospital,"Siem") == TRUE) {
 	source("code/Load_file_SR.R",local = knitr::knit_global())
 }
 
-if (str_detect(str_to_lower(hospital),"bat\\w+?") == TRUE) {
+if (str_detect(hospital,"Bat") == TRUE) {
 	source("code/Load_file_BB.R",local = knitr::knit_global())
 }
 
-if (str_detect(str_to_lower(hospital),"tak\\w+?") == TRUE) {
+if (str_detect(hospital,"Tak") == TRUE) {
 	source("code/Load_file_TK.R",local = knitr::knit_global())
 }
 
