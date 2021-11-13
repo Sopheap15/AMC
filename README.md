@@ -1,8 +1,8 @@
 # AMC
- 1- drop your file hosdid in folder data
+ 1- drop your HoSDID files in folder data/hospital name/ hospital name and year
+ 2- adjust information in dictionary.xlsx
  2- open AMC.Rproj
- 3- open load_file.R and read file
- 4- adjust patient number in dictionary
- 5- open Run.R and select all texts ---> press Run
- 6- Report in folder output
+ 3- open Run.R
+ 5- Select all and press run or CRT or Command + A + Enter
+ 6- Report in folder output after complete run
  
