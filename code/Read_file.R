@@ -10,6 +10,16 @@ read_file_BB <- function(x){
 		mutate(month = rep(str_extract(str_to_lower(x),"jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"), length(commodity_name))) 
 }
 
+## Kampong Cham
+read_file_KC <- function(x){
+	readWorksheetFromFile(x, sheet = "Sheet1", startRow = 2) %>% 
+		clean_names() %>% 
+		remove_empty(c("rows", "cols")) %>% 
+		filter(row_number() <= n() - 2) %>% 
+		select(commodity_name, line_total, form, strength) %>% 
+		mutate(month = rep(str_extract(str_to_lower(x),"jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"), length(commodity_name))) 
+}
+
 ## Siem Reap and Takeo
 read_file <- function(x){
 	readWorksheetFromFile(x, sheet = "Sheet1", startRow = 8) %>% 
@@ -27,8 +37,9 @@ data %>%
 	mutate(abbr = case_when(
 		#Penicillin
 		str_detect(str_to_lower(commodity_name), "^pen(\\w+)?lin[e]?(.+)?g") ~ "PEN",
-		str_detect(str_to_lower(commodity_name), "(phen|meth)(.+)?pen(\\w+)?lin[e]?") ~ "PHN",
-		str_detect(str_to_lower(commodity_name), "ben(w+)?pen(\\w+)?lin[e]?") ~ "BNB",
+		str_detect(str_to_lower(commodity_name), "^(phen|meth)(.+)?pen(\\w+)?lin[e]?") ~ "PHN",
+		str_detect(str_to_lower(commodity_name), "^ben(.+)?pen(\\w+)?lin[e]?") ~ "BNB",
+		str_detect(str_to_lower(commodity_name), "^ben(.+)?phe(.+)?pen(\\w+)?lin[e]?") ~ "BNP",
 		str_detect(str_to_lower(commodity_name), "^amo(\\w+)?lin[e]?(?!(.+)?cla*)") ~ "AMX", 
 		str_detect(str_to_lower(commodity_name), "^amo(.+)?cla*") ~ "AMC",
 		str_detect(str_to_lower(commodity_name), "^amp(\\w+)?lin[e]?") ~ "AMP",
@@ -44,7 +55,7 @@ data %>%
 		str_detect(str_to_lower(commodity_name), "^ceft(.+)?cla*") ~ "CCV",
 		str_detect(str_to_lower(commodity_name), "^cefe(\\w+)?[czx]im[e]?") ~ "FEP",
 		# Carbapenem
-		str_detect(str_to_lower(commodity_name), "^mer(\\w+)?nem[e]?") ~ "MEM",
+		str_detect(str_to_lower(commodity_name), "mer(\\w+)?nem[e]?") ~ "MEM",
 		str_detect(str_to_lower(commodity_name), "^imi(\\w+)?nem[e]?") ~ "IMP",
 		# Aminoglycoside
 		str_detect(str_to_lower(commodity_name), "^gen(\\w+)?[czx]in[e]?") ~ "GEN",

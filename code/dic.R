@@ -11,7 +11,8 @@ library(AMR)
 ## sheet dict
 dic <- import("dic/dictionary.xlsx", sheet = "Dict") %>%
 	mutate(container = trimws(str_to_lower(container)),
-				 strength = trimws(str_to_lower(strength)))
+				 strength = trimws(str_to_lower(strength))) %>% 
+	distinct(abbr, container, strength, gram, .keep_all = T)
 
 ## sheet hospital
 hospital <- import("dic/dictionary.xlsx", sheet = "hospital") %>%

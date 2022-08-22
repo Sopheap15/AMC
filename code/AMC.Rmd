@@ -9,44 +9,43 @@ output:
     theme: cerulean
 ---
 
+```{css, echo = F}
 
-```{=html}
-<style>
 .table-hover > tbody > tr:hover { 
-  background-color: #f4f442;
+  background-color:  rgba(255, 255, 0, 0.8);
 }
 
 body {
-text-align: justify}
+text-align: justify;
+}
 
-</style>
+.tocify {
+ border-radius: 2 px;
+ border-color: red;
+ text-align: left;
+}
+
 
 ```
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, results = 'hide', fig.keep = 'all', message = FALSE, fig.align = 'c')
+knitr::opts_chunk$set(echo = F, 
+											results = 'hide', 
+											message = F, 
+											fig.align = 'c')
 ```
 
-+------------------+------------------------------------------+
-| Abbreviation     |                                          |
-+==================+==========================================+
-| AMC              | Antimicrobial consumption                |
-+------------------+------------------------------------------+
-| AMR              | Antimicrobial resistance                 |
-+------------------+------------------------------------------+
-| AMS              | Antimicrobial stewardship                |
-+------------------+------------------------------------------+
-| AWaRe            | Access, Watch and Reserve antibiotics    |
-+------------------+------------------------------------------+
-| DDD              | Defined Daily Dose                       |
-+------------------+------------------------------------------+
-| HosDID           | Hospital Drug Inventory Database         |
-+------------------+------------------------------------------+
-| HTML             | Hypertext Markup Language                |
-+------------------+------------------------------------------+
-| PD               | Inpatient days                           |
-+------------------+------------------------------------------+
-| WHO              | World Health Organisation                |
-+------------------+------------------------------------------+
+| Abbreviation |                                       |
+|--------------|---------------------------------------|
+| AMC          | Antimicrobial consumption             |
+| AMR          | Antimicrobial resistance              |
+| AMS          | Antimicrobial stewardship             |
+| AWaRe        | Access, Watch and Reserve antibiotics |
+| DDD          | Defined Daily Dose                    |
+| HosDID       | Hospital Drug Inventory Database      |
+| HTML         | Hypertext Markup Language             |
+| PD           | Inpatient days                        |
+| WHO          | World Health Organisation             |
 
 ## 1. Introduction
 
@@ -54,17 +53,17 @@ Antimicrobial resistance (AMR) is a significant threat to health and human devel
 
 National guidelines for Antimicrobial stewardship (AMS) in healthcare facilities endorsed by Cambodian Ministry of Health in September 2019 points out AMC monitoring as one of the key surveillance activities conducted by an AMS team in order to improve rational use of antimicrobials within a healthcare facility.
 
-Performing AMC monitoring provides a wide range of advantages including:   
-- evaluate the trends in antimicrobial use by identifying the baseline and follow-up monitoring of overall hospital-wide AMC, most commonly used antimicrobials, wards that use the most antimicrobials...   
-- identify the areas requiring AMS initiative and monitor the progress of AMS intervention link antimicrobial exposure to the development of AMR  
-- link antimicrobial exposure to the development of AMR  
+Performing AMC monitoring provides a wide range of advantages including:\
+- evaluate the trends in antimicrobial use by identifying the baseline and follow-up monitoring of overall hospital-wide AMC, most commonly used antimicrobials, wards that use the most antimicrobials...\
+- identify the areas requiring AMS initiative and monitor the progress of AMS intervention link antimicrobial exposure to the development of AMR\
+- link antimicrobial exposure to the development of AMR
 
 ## 2. Methodology for measuring antimicrobial consumption
 
 Pharmacists in the government hospitals, who are responsible for performing AMC monitoring, work closely with pharmacist mentors from Diagnostic Microbiology Development Program [(DMDP)](www.dmdp.org) to generate a comprehensive report by using methods that are simple, reproducible and timely.
 
-The concept and calculation of AMC are adopted from National guidelines for Antimicrobial stewardship (AMS) in healthcare facilities endorsed by Cambodian Ministry of Health in September 2019. AMC is to be measured in Defined Daily Dose (DDDs) per 1000 inpatient-days which requires two data sources:   
-- Inventory data of the antimicrobial units dispensed for inpatient setting during the surveillance period. Since antimicrobials are prescribed in different unit doses of daily administration, a standard method is used in DDD which is the average maintenance dose per day of a medicine used for its main indication in adults. It is assigned to each medicinal substance by taking into account the route of administration. The DDD is a purely technical unit; it serves as a standard measure for quantification, but does not necessarily reflect the recommended or actual use of the substance in an individual patient. The antimicrobials included in this surveillance report are antibacterials for systemic use (J01), antibiotics for alimentary tract (A07AA), nitroimidazole derivatives for protozoal diseases (P01AB) and antifungals (J02).  
+The concept and calculation of AMC are adopted from National guidelines for Antimicrobial stewardship (AMS) in healthcare facilities endorsed by Cambodian Ministry of Health in September 2019. AMC is to be measured in Defined Daily Dose (DDDs) per 1000 inpatient-days which requires two data sources:\
+- Inventory data of the antimicrobial units dispensed for inpatient setting during the surveillance period. Since antimicrobials are prescribed in different unit doses of daily administration, a standard method is used in DDD which is the average maintenance dose per day of a medicine used for its main indication in adults. It is assigned to each medicinal substance by taking into account the route of administration. The DDD is a purely technical unit; it serves as a standard measure for quantification, but does not necessarily reflect the recommended or actual use of the substance in an individual patient. The antimicrobials included in this surveillance report are antibacterials for systemic use (J01), antibiotics for alimentary tract (A07AA), nitroimidazole derivatives for protozoal diseases (P01AB) and antifungals (J02).\
 - The total inpatient day data during the surveillance period. The volume of antimicrobial consumption (the total number of DDDs) must be adjusted by measures representing the hospital activity. Standardization by hospital activity data allows the comparison of data from different time periods and from different hospitals or hospital units. Here, we report hospital activity in 'inpatient days (PD)', defined as the sum of patient days during the surveillance period of time (e.g. year 2017 or first quarter of 2017).
 
 Raw data of antimicrobial dispensed for inpatient setting was extracted from the hospital inventory system called "Hospital Drug Inventory Database (HosDID)" into Excel and then imported to R programming for cleaning, analysis and generating reports. The report is in HTML format which is able to open with a wide range of devices.
@@ -90,15 +89,15 @@ data %>%
 	adorn_totals("col") %>% 
 	#filter(Total > 0) %>% 
 	kable(align = c('l','c','l','r','r','r','r','r','r','r','r','r','r','r'), 
-				format.args = list(big.mark = ",")) %>% 
-	kable_styling(bootstrap_options = c("bordered","condensed", "striped", "hover","responsive")) %>% 
+				format.args = list(big.mark = ","), escape = F, full_width = F) %>% 
+	kable_styling(bootstrap_options = c("bordered","condensed", "striped", "hover","responsive"), fixed_thead = T) %>% 
 	row_spec(0, background = "#FFCA33", align = "c") %>% 
 	collapse_rows(columns = 1, valign = "middle") %>% 
-  scroll_box(width = "110%", height = "600px")
+  scroll_box(width = "100%", height = "600px")
 		
 ```
 
-## 4. Total antimicrobial consumption in the inpatient setting  
+## 4. Total antimicrobial consumption in the inpatient setting
 
 ```{r ddd_1000_pyear}
 da <- data %>% 
@@ -106,8 +105,8 @@ da <- data %>%
 	distinct(monitoring, ddd_1000_pyear, .keep_all = T) %>% 
 	group_by(antibiotic, ddd_1000_pyear)
 ```
-The yearly antimicrobial consumption in the inpatient setting is   `r round_half_up(sum(da$ddd_1000_pyear))` DDDs/1000 patient days.
 
+The yearly antimicrobial consumption in the inpatient setting is `r round_half_up(sum(da$ddd_1000_pyear))` DDDs/1000 patient days.
 
 ```{r quartely line}
 quarter_line <- quarter %>% 
@@ -128,10 +127,9 @@ quarter_line %>%
 	scale_y_continuous(limits = c(min(quarter_line$n) - 50, max(quarter_line$n) + 50)) 
 ```
 
+### 4.1 Yearly individual antimicrobial consumption
 
-### 4.1  Yearly individual antimicrobial consumption
-
-```{r ddd, error = F}
+```{r ddd}
 da %>% 
 	ggplot(aes(reorder(antibiotic, ddd_1000_pyear), ddd_1000_pyear, fill = antibiotic)) + 
 	geom_bar(stat = "identity") + 
@@ -145,7 +143,7 @@ da %>%
 				axis.text = element_text(colour = "black", size = 9))
 ```
 
-```{r ddd_IV_PO, error = F, message=FALSE, }
+```{r ddd_IV_PO}
 da %>% 
 	mutate(route = recode(route, IV = "Intravenous (IV)", PO = "Oral (PO)")) %>%
 	ggplot(aes(reorder(ab_name(abbr), ddd_1000_pyear), ddd_1000_pyear, fill = antibiotic)) + 
@@ -162,17 +160,18 @@ da %>%
 				axis.text = element_text(colour = "black", size = 9))
 ```
 
-### 4.2 WHO AWaRe Groups  
+### 4.2 WHO AWaRe Groups
 
-As part of the 2017 essential medicines list, WHO introduced a new categorization of antibiotics to guide prescriptions and treatment -- AWaRe : Access, Watch and Reserve groups.The AWaRe categorization is based on a methodological approach that takes into consideration the treatment guidelines of the most frequent infectious disease syndromes.   
-* The Access group contains antibiotics intended to be used as first- and second-choice therapy. These antibiotics should be consistently available in an appropriate quality and for an affordable price in every country.  
-* The Watch group includes mainly broad-spectrum antibiotics, which, because of their higher potential to induce the development of resistance or their unfavourable benefit--risk balance (or both), should only be used for specific indications.  
-* The Reserve group represents last resort antibiotics that should only be used if other antibiotics do not work anymore.  
+As part of the 2017 essential medicines list, WHO introduced a new categorization of antibiotics to guide prescriptions and treatment -- AWaRe : Access, Watch and Reserve groups.The AWaRe categorization is based on a methodological approach that takes into consideration the treatment guidelines of the most frequent infectious disease syndromes.\
+\* The Access group contains antibiotics intended to be used as first- and second-choice therapy. These antibiotics should be consistently available in an appropriate quality and for an affordable price in every country.\
+\* The Watch group includes mainly broad-spectrum antibiotics, which, because of their higher potential to induce the development of resistance or their unfavourable benefit--risk balance (or both), should only be used for specific indications.\
+\* The Reserve group represents last resort antibiotics that should only be used if other antibiotics do not work anymore.
 
 In the recent AWaRe campaign, WHO promoted a target of 60% for the use of Access group antibiotics at country level, which should be achieved by 2023 . AWaRe categorization might be used for establishing targets adapted to the hospital setting to support local antimicrobial stewardship programmes, and it might serve as an aid in developing restricted formularies.
 
 ### 4.2.1 Quarterly proportion of AWaRe antibiotic consumption
-```{r quartely, message = F}
+
+```{r quartely}
 quarter %>% 
 	filter(!is.na(monitoring)) %>% 
 	group_by(Q) %>% 
@@ -191,7 +190,8 @@ quarter %>%
 ```
 
 ### 4.2.2 Yearly consumption of AWaRe antibiotics
-```{r AB AWaRe, message = F}
+
+```{r AB AWaRe}
 
 d <- da %>% 
 	filter(!is.na(monitoring)) %>% 
@@ -218,9 +218,8 @@ d %>%
 #rm(da)
 
 ```
-  
-    
-```{r AB in access group, message = F}
+
+```{r AB in access group}
 da %>% 
 	filter(monitoring == "Access") %>% 
 	group_by(abbr, route) %>% 
@@ -239,9 +238,8 @@ da %>%
 				strip.text = element_text(face = "bold"),
 				plot.title = element_markdown(lineheight = 1.1, hjust = 0.5, face = "bold"))
 ```
-  
-    
-```{r AB in watch group, message = F}
+
+```{r AB in watch group}
 da %>% 
 	filter(monitoring == "Watch") %>% 
 	group_by(abbr, route) %>% 
@@ -263,11 +261,11 @@ da %>%
 
 ## 5. Limitations
 
-This report has several limitations that should be acknowledged  
-* Reliability of this report depends on the quality of the data provided by HosDID that is used to generate this report.  
-* Antibiotics purchased from private pharmacies for patients are not included in HosDID data.  
-* DDD is a unit of measure intended for an adult population. This data may include data from pediatric patients, who generally require a lower total daily dose of an antibiotic compared to adults.  
-* AMC monitoring only provides quantitative data; more informative qualitative data can be obtained through conducting an antimicrobial Point Prevalence Survey (PPS).
+This report has several limitations that should be acknowledged\
+\* Reliability of this report depends on the quality of the data provided by HosDID that is used to generate this report.\
+\* Antibiotics purchased from private pharmacies for patients are not included in HosDID data.\
+\* DDD is a unit of measure intended for an adult population. This data may include data from pediatric patients, who generally require a lower total daily dose of an antibiotic compared to adults.\
+\* AMC monitoring only provides quantitative data; more informative qualitative data can be obtained through conducting an antimicrobial Point Prevalence Survey (PPS).
 
 ```{=html}
 <p align="right";> Reported by <br> 

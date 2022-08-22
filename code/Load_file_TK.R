@@ -32,7 +32,7 @@ data_OPD <- list.files(str_glue("{path}/OPD"), pattern = '.xls$', full.names = T
 
 data <- left_join(data_all_destination, data_OPD) %>% 
 	mutate_at(vars( starts_with("line_total")), 
-						funs( if_else( is.na(.), 0, .))) %>% 
+						~replace(., is.na(.), 0)) %>% 
 	mutate(line_total = line_total_all_des - line_total_OPD, 
 				 month = str_to_title(month)) %>%
 	left_join(patient_day) %>% 
