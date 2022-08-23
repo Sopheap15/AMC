@@ -11,6 +11,10 @@ if (str_detect(hospital,"Bat") == TRUE) {
 	source("code/Load_file_BB.R",local = knitr::knit_global())
 }
 
+if (str_detect(hospital,"Kam") == TRUE) {
+	source("code/Load_file_KC.R",local = knitr::knit_global())
+}
+
 if (str_detect(hospital,"Tak") == TRUE) {
 	source("code/Load_file_TK.R",local = knitr::knit_global())
 }

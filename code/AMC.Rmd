@@ -1,5 +1,5 @@
 ---
-title: "<center> `r str_to_title(hospital)` <br> <span style='color:red'> Antimicrobial Consumption </span></center>"
+title: "<span style='font-weight:bold;'>`r str_to_title(hospital)` </span><br> <span style='color:red'> Antimicrobial Consumption </span>"
 #date: "<center> Reported date: `r format(Sys.Date(), '%d-%m-%Y')`</center>"
 output: 
   html_document:
@@ -9,30 +9,49 @@ output:
     theme: cerulean
 ---
 
-```{css, echo = F}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, 
+											results = 'hide', 
+											message = F, 
+											fig.align = 'c')
+```
+```{css}
+h1.title {
+	text-align: center;
+}
+
+h2:hover, h3:hover {
+	color: red;
+	cursor: pointer;
+}
 
 .table-hover > tbody > tr:hover { 
   background-color:  rgba(255, 255, 0, 0.8);
 }
 
 body {
-text-align: justify;
+	text-align: justify;
 }
 
 .tocify {
- border-radius: 2 px;
+ border-radius: 8px;
  border-color: red;
  text-align: left;
 }
 
+img {
+	border-radius: 8px;
+	margin-right: 8px;
+	
+}
 
-```
+img:hover {
+  box-shadow: 0 0 4px 2px rgba(0, 140, 186, 0.5);
+}
+.end_report {
+	text-align: right;
+}
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, 
-											results = 'hide', 
-											message = F, 
-											fig.align = 'c')
 ```
 
 | Abbreviation |                                       |
@@ -267,8 +286,7 @@ This report has several limitations that should be acknowledged\
 \* DDD is a unit of measure intended for an adult population. This data may include data from pediatric patients, who generally require a lower total daily dose of an antibiotic compared to adults.\
 \* AMC monitoring only provides quantitative data; more informative qualitative data can be obtained through conducting an antimicrobial Point Prevalence Survey (PPS).
 
-```{=html}
-<p align="right";> Reported by <br> 
+
+<p class="end_report";> Reported by <br> 
 `r str_glue("Pharmacy team in {hospital}")` <br>
 `r format(Sys.Date(),"%d-%b-%Y")`</p>
-```
