@@ -1,37 +1,4 @@
-# Read file function----
-
-## Battambang
-read_file_BB <- function(x){
-	readWorksheetFromFile(x, sheet = "Sheet1", startRow = 6) %>% 
-		clean_names() %>% 
-		remove_empty(c("rows", "cols")) %>% 
-		filter(row_number() <= n() - 3, str_detect(tolower(code),"nc") != T) %>% 
-		select(commodity_name, line_total = outgoing, form, strength) %>% 
-		mutate(month = rep(str_extract(str_to_lower(x),"jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"), length(commodity_name))) 
-}
-
-## Kampong Cham
-read_file_KC <- function(x){
-	readWorksheetFromFile(x, sheet = "Sheet1", startRow = 2) %>% 
-		clean_names() %>% 
-		remove_empty(c("rows", "cols")) %>% 
-		filter(row_number() <= n() - 2) %>% 
-		select(commodity_name, line_total, form, strength) %>% 
-		mutate(month = rep(str_extract(str_to_lower(x),"jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"), length(commodity_name))) 
-}
-
-## Siem Reap and Takeo
-read_file <- function(x){
-	readWorksheetFromFile(x, sheet = "Sheet1", startRow = 8) %>% 
-		clean_names() %>% 
-		remove_empty(c("rows", "cols")) %>% 
-		filter(row_number() <= n() - 2) %>% 
-		select(commodity_name, line_total, form, strength) %>% 
-		mutate(month = rep(str_extract(str_to_lower(x),"jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"), length(commodity_name))) 
-}
-
-
-# function to capture antibiotic----
+# function to capture antibiotic
 ab_cname <- function(data){
 data %>% 
 	mutate(abbr = case_when(
@@ -86,9 +53,54 @@ data %>%
 		str_detect(str_to_lower(commodity_name), "^n[iy]st(\\w+)?in[e]?") ~ "NYS",	
 		TRUE ~ "F"),
 		container = str_extract(str_to_lower(commodity_name), "\\d+(\\s)?ml")) %>% 
-		#,container = str_remove(container, "ml") 
+		#container = str_remove(container, "ml") 
 	filter(abbr != "F", 
 				 str_detect(commodity_name,"eye|di[sck]") != TRUE) 
+}
+
+# Read file function
+read_file <- function(file, sheet, st_r){
+	file %>% 
+		readWorksheetFromFile(sheet = {{sheet}}, startRow = {{st_r}}) %>% 
+		clean_names() %>% 
+		remove_empty(c("rows", "cols")) %>% 
+		filter(row_number() <= n()) %>% 
+		select(commodity_name, any_of(c("code","line_total", "outgoing")), form, strength) %>% 
+		mutate(month = rep(str_extract(str_to_lower(file),
+																	 "jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"), 
+											 length(commodity_name))) %>% 
+		ab_cname() %>% 
+		mutate(commodity_name = str_to_lower(commodity_name),
+					 container = trimws(str_to_lower(container)),
+					 strength = trimws(str_to_lower(strength)),
+					 month = trimws(str_to_title(month)))
+	
+}  
+
+# Joining data with dictionary to calculate ddd ----
+cal_ddd <- function(data) {
+	data %>% 
+		mutate(antibiotic = ab_name(abbr),
+					 antibiotic = paste0(antibiotic, " (", route,")"),
+					 month = factor(month, levels = month.abb),
+					 gram_ddd = as.numeric(line_total) * as.numeric(gram) / as.numeric(ddd)) %>%
+		group_by(antibiotic) %>% 
+		mutate(ddd_1000_pyear = sum(gram_ddd) * 1000 / t_patient_day)
+}
+
+# AMC Quarterly calculation
+amc_q <- function(data){
+	data %>%
+		mutate(Q = paste0("Q",lubridate::quarter(match(month, month.abb)))) %>%
+		group_by(Q) %>% 
+		mutate(Qpatient_day = sum(unique(patient_day), na.rm = T)) %>% 
+		group_by(antibiotic, Q, monitoring) %>% 
+		summarise(Qgram_ddd_1000 = round(sum(gram_ddd) * 1000 / Qpatient_day, 1)) %>%
+		distinct(antibiotic, Q, Qgram_ddd_1000) %>% 
+		group_by(Q, monitoring) %>% 
+		summarise(total = sum(Qgram_ddd_1000)) %>% 
+		group_by(Q) %>% 
+		mutate(prop = round_half_up(total*100/sum(total)))
 }
 
 

@@ -1,16 +1,15 @@
-# Import dictionary----
+# Import dictionary ----
 patient_day <- import(str_glue("{path}/Patient day.xlsx"), sheet = "Patient_day") %>% 
 	clean_names()
+
 t_patient_day <- sum(patient_day$patient_day, na.rm = T)
 
-#import data-----
-data <- list.files(path, pattern = '.xls$', full.names = T) %>%
-	purrr::map(~read_file_BB(.)) %>% reduce(., bind_rows) %>%
-	ab_cname() %>% 
-	mutate(commodity_name = str_to_lower(commodity_name),
-				 container = trimws(str_to_lower(container)),
-				 strength = trimws(str_to_lower(strength)),
-				 month = trimws(str_to_title(month))) %>% 
+#import data -----
+data <- list.files(str_glue("{path}/All destination"), 
+														pattern = '.xls$', full.names = T) %>% 
+	purrr::map_dfr(~read_file(., sheet = "Sheet1", st_r = 6), bind_rows) %>% 
+	filter(str_detect(code,"(?i)nc") != T) %>% 
+	select(-code, line_total_all_des = outgoing) %>% 
 	inner_join(dic,
 						by = c("abbr" = "abbr", 
 									 "container" = "container",
@@ -18,26 +17,36 @@ data <- list.files(path, pattern = '.xls$', full.names = T) %>%
 									 )) %>%
 	distinct(abbr, container, month, strength, .keep_all = T)
 
+# covid ward
+if (dir.exists(str_glue("{path}/Covid"))) {
+	data_covid <- list.files(str_glue("{path}/Covid"), 
+						 pattern = '.xls$', full.names = T) %>% 
+		purrr::map_dfr(~read_file(., sheet = "Sheet1", st_r = 6), bind_rows) %>%
+		filter(str_detect(code,"(?i)nc") != T) %>% 
+		select(-code, line_total_covid = outgoing) %>% 
+		inner_join(dic,
+							 by = c("abbr" = "abbr", 
+							 			 "container" = "container",
+							 			 "strength" = "strength"
+							 )) %>%
+		distinct(abbr, container, month, strength, .keep_all = T)
+	
+	# join 2 data including Covid
+	data <- purrr::reduce(list(data, data_covid), left_join) %>% 
+		mutate_at(vars( starts_with("line_total")), 
+							~replace(., is.na(.), 0)) %>% 
+		mutate(line_total = line_total_all_des - line_total_covid,
+					 month = str_to_title(month))
+}else{
+	data <- data %>% 
+		rename(line_total = line_total_all_des)
+}
 
-# Joining data with dictionary and patient----
-data <- left_join(data, patient_day) %>% 
-	mutate(antibiotic = ab_name(abbr),
-				 antibiotic = paste0(antibiotic, " (", route,")"),
-				 month = factor(month, levels = month.abb),
-				 gram_ddd = as.numeric(line_total) * as.numeric(gram) / as.numeric(ddd)) %>%
-	group_by(antibiotic) %>% 
-	mutate(ddd_1000_pyear = sum(gram_ddd) * 1000 / t_patient_day)
 
+# Joining data with dictionary and patient ----
+data <- data %>% 
+	left_join(patient_day) %>% 
+	cal_ddd()
 
-# Calculate quarterly----
-quarter <- data %>%
-	mutate(Q = paste0("Q",lubridate::quarter(match(month, month.abb)))) %>%
-	group_by(Q) %>% 
-	mutate(Qpatient_day = sum(unique(patient_day), na.rm = T)) %>% 
-	group_by(antibiotic, Q, monitoring) %>% 
-	summarise(Qgram_ddd_1000 = round(sum(gram_ddd) * 1000 / Qpatient_day, 1)) %>%
-	distinct(antibiotic, Q, Qgram_ddd_1000) %>% 
-	group_by(Q, monitoring) %>% 
-	summarise(total = sum(Qgram_ddd_1000)) %>% 
-	group_by(Q) %>% 
-	mutate(prop = round_half_up(total*100/sum(total)))
+# Calculate quarterly ----
+quarter <- amc_q(data)
